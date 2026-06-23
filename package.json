@@ -1,0 +1,20 @@
+{
+  "name": "thunder-cms",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "db:generate": "pnpm --filter @thunder/database generate",
+    "db:push": "pnpm --filter @thunder/database push",
+    "db:studio": "pnpm --filter @thunder/database studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20"
+  }
+}
