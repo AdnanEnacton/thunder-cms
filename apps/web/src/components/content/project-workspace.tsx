@@ -24,12 +24,19 @@ interface Collection {
   entryCount: number;
 }
 
+interface User {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+}
+
 interface ProjectWorkspaceProps {
   projectId: string;
   projectName: string;
+  user?: User;
 }
 
-export function ProjectWorkspace({ projectId, projectName }: ProjectWorkspaceProps) {
+export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorkspaceProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -234,6 +241,7 @@ export function ProjectWorkspace({ projectId, projectName }: ProjectWorkspacePro
           onViewChange={selectView}
           onCollectionSelect={selectCollection}
           onConfigSelect={selectConfig}
+          user={user}
         />
         <main className="flex-1 overflow-hidden">
           <EntryEditor
@@ -259,6 +267,7 @@ export function ProjectWorkspace({ projectId, projectName }: ProjectWorkspacePro
         onViewChange={selectView}
         onCollectionSelect={selectCollection}
         onConfigSelect={selectConfig}
+        user={user}
       />
 
       <main className="flex flex-1 flex-col overflow-hidden">

@@ -19,7 +19,7 @@ export default async function ProjectsPage() {
     },
   });
 
-  const projects = memberships.flatMap((m) => m.organization.projects);
+  const projects = memberships.flatMap((m: any) => m.organization.projects);
 
   return (
     <div className="space-y-6">
@@ -41,7 +41,7 @@ export default async function ProjectsPage() {
           <Card>
             <CardContent className="py-12 text-center text-muted">
               No projects yet.{" "}
-              <Link href="/dashboard/projects/new" className="text-thunder-400 hover:underline">
+              <Link href="/dashboard/projects/new" className="text-thunder-600 hover:text-thunder-700 font-medium hover:underline">
                 Connect your first repository
               </Link>
             </CardContent>

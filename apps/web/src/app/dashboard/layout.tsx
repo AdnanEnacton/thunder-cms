@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { Logo } from "@/components/logo";
-import { SignOutButton } from "@/components/sign-out-button";
 
 export default async function DashboardLayout({
   children,
@@ -16,14 +14,12 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-surface">
-      <DashboardSidebar />
-      <div className="flex flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b border-border px-6">
-          <Logo />
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted">{session.user.email}</span>
-            <SignOutButton />
+    <div className="flex min-h-screen bg-slate-50/50">
+      <DashboardSidebar user={session.user} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200/60 bg-white px-6">
+          <div className="text-xs font-medium text-slate-400">
+            Console
           </div>
         </header>
         <main className="flex-1 overflow-auto p-6">{children}</main>

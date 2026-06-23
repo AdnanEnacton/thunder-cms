@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     },
   });
 
-  const projects = memberships.flatMap((m) => m.organization.projects);
+  const projects = memberships.flatMap((m: any) => m.organization.projects);
 
   return (
     <div className="space-y-8">
@@ -95,10 +95,10 @@ export default async function DashboardPage() {
                     <p className="text-sm text-muted">{project.gitRepoFullName}</p>
                   </div>
                   <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs ${
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${
                       project.isConfigured
-                        ? "bg-green-500/15 text-green-400"
-                        : "bg-amber-500/15 text-amber-400"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200/50"
+                        : "bg-amber-50 text-amber-700 border-amber-200/50"
                     }`}
                   >
                     {project.isConfigured ? "Ready" : "Setup required"}

@@ -9,7 +9,7 @@ export default async function ProjectPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await auth();
+  const session = await auth();
   const { id } = await params;
 
   const project = await prisma.project.findUnique({ where: { id } });
@@ -24,7 +24,11 @@ export default async function ProjectPage({
 
   return (
     <Suspense fallback={<div className="p-8 text-muted">Loading content...</div>}>
-      <ProjectWorkspace projectId={project.id} projectName={project.name} />
+      <ProjectWorkspace
+        projectId={project.id}
+        projectName={project.name}
+        user={session?.user}
+      />
     </Suspense>
   );
 }

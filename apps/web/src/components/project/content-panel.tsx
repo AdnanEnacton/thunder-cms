@@ -113,7 +113,7 @@ export function ContentPanel({
                 <div className="flex items-center gap-3 text-sm text-muted">
                   {entry.date && <span>{entry.date.slice(0, 10)}</span>}
                   {entry.draft && (
-                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-400">
+                    <span className="rounded-full bg-amber-50 text-amber-700 border border-amber-200/50 px-2 py-0.5 text-xs font-medium">
                       draft
                     </span>
                   )}

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { prisma } from "@thunder/database";
+import type { Prisma } from "@thunder/database";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     const orgName = `${parsed.data.name}'s Workspace`;
     const orgSlug = slugify(orgName);
 
-    const user = await prisma.$transaction(async (tx) => {
+    const user = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const createdUser = await tx.user.create({
         data: {
           name: parsed.data.name,

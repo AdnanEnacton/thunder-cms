@@ -32,7 +32,7 @@ export async function GET() {
     },
   });
 
-  const projects = memberships.flatMap((m) => m.organization.projects);
+  const projects = memberships.flatMap((m: any) => m.organization.projects);
 
   return NextResponse.json({ projects });
 }
