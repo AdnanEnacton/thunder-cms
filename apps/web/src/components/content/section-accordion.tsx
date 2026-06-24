@@ -11,6 +11,7 @@ interface SectionAccordionProps {
   onExpand: (index: number | null) => void;
   onSectionChange: (index: number, value: unknown) => void;
   templateOptions: string[];
+  projectId?: string;
 }
 
 export function SectionAccordion({
@@ -19,6 +20,7 @@ export function SectionAccordion({
   onExpand,
   onSectionChange,
   templateOptions,
+  projectId,
 }: SectionAccordionProps) {
   if (!sections.length) return null;
 
@@ -50,6 +52,7 @@ export function SectionAccordion({
                   templateOptions={templateOptions}
                   onChange={(value) => onSectionChange(index, value)}
                   variant="flat"
+                  projectId={projectId}
                 />
               </div>
             )}

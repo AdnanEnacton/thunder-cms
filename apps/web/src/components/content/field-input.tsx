@@ -1,7 +1,9 @@
 "use client";
 
 import type { FieldSchema, FieldType } from "@thunder/types";
+import { ImageFieldInput } from "@/components/content/image-field-input";
 import { VisualValueEditor } from "@/components/content/visual-value-editor";
+import { isImageFieldKey } from "@/lib/content/field-ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -11,10 +13,16 @@ interface FieldInputProps {
   value: unknown;
   onChange: (value: unknown) => void;
   compact?: boolean;
+  projectId?: string;
 }
 
 function resolveFieldType(field: FieldSchema, value: unknown): FieldType {
   if (field.type !== "string" && field.type !== "unknown") return field.type;
+  
+  if (isImageFieldKey(field.name)) {
+    return "image";
+  }
+
   if (typeof value === "boolean") return "boolean";
   if (typeof value === "number") return "number";
   if (Array.isArray(value)) {
@@ -29,7 +37,7 @@ function resolveFieldType(field: FieldSchema, value: unknown): FieldType {
   return field.type === "unknown" ? "string" : field.type;
 }
 
-export function FieldInput({ field, value, onChange, compact = false }: FieldInputProps) {
+export function FieldInput({ field, value, onChange, compact = false, projectId }: FieldInputProps) {
   const id = `field-${field.name}`;
   const fieldType = resolveFieldType(field, value);
 
@@ -41,6 +49,7 @@ export function FieldInput({ field, value, onChange, compact = false }: FieldInp
         value={value}
         onChange={onChange}
         variant={compact ? "flat" : "default"}
+        projectId={projectId}
       />
     );
   }
@@ -113,14 +122,25 @@ export function FieldInput({ field, value, onChange, compact = false }: FieldInp
     );
   }
 
+  if (fieldType === "image") {
+    return (
+      <ImageFieldInput
+        id={id}
+        label={field.label}
+        value={String(value ?? "")}
+        onChange={onChange}
+        projectId={projectId}
+        variant={compact ? "flat" : "default"}
+      />
+    );
+  }
+
   const inputType =
     fieldType === "number"
       ? "number"
       : fieldType === "date"
         ? "date"
-        : fieldType === "image"
-          ? "url"
-          : "text";
+        : "text";
 
   return (
     <div className={fieldSpacing}>

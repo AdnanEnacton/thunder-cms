@@ -171,6 +171,7 @@ export function ConfigFileEditor({ projectId, filePath, onBack }: ConfigFileEdit
                 value={frontmatter[field.name]}
                 onChange={(v) => updateField(field.name, v)}
                 compact
+                projectId={projectId}
               />
             ))}
             {extraFields.map((name) => (
@@ -180,6 +181,7 @@ export function ConfigFileEditor({ projectId, filePath, onBack }: ConfigFileEdit
                 value={frontmatter[name]}
                 onChange={(v) => updateField(name, v)}
                 compact
+                projectId={projectId}
               />
             ))}
           </div>

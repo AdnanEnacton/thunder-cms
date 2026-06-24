@@ -11,6 +11,7 @@ interface ItemListProps {
   items: unknown[];
   onChange: (items: unknown[]) => void;
   templateOptions?: string[];
+  projectId?: string;
 }
 
 function cloneItemTemplate(items: unknown[]): Record<string, unknown> {
@@ -32,7 +33,7 @@ function cloneItemTemplate(items: unknown[]): Record<string, unknown> {
   return template;
 }
 
-export function ItemList({ fieldKey, items, onChange, templateOptions }: ItemListProps) {
+export function ItemList({ fieldKey, items, onChange, templateOptions, projectId }: ItemListProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const label = humanizeFieldKey(fieldKey);
@@ -83,6 +84,7 @@ export function ItemList({ fieldKey, items, onChange, templateOptions }: ItemLis
           templateOptions={templateOptions}
           onChange={(value) => handleUpdate(editingIndex, value)}
           variant="flat"
+          projectId={projectId}
         />
       </div>
     );

@@ -1,4 +1,5 @@
 import { getFileBinary } from "@/lib/github";
+import { fromPublicPath } from "@/lib/media/scan";
 import { getProjectForUser } from "@/lib/project-auth";
 
 export async function GET(
@@ -21,14 +22,36 @@ export async function GET(
 
   const { project, token } = result;
 
+  let repoPath = path;
+  if (project.mediaRoot && project.mediaPublic) {
+    repoPath = fromPublicPath(path, project.mediaRoot, project.mediaPublic);
+  }
+
   try {
-    const { content } = await getFileBinary(
-      token,
-      project.gitRepoOwner!,
-      project.gitRepoName!,
-      path,
-      project.defaultBranch,
-    );
+    let content;
+    try {
+      const res = await getFileBinary(
+        token,
+        project.gitRepoOwner!,
+        project.gitRepoName!,
+        repoPath,
+        project.defaultBranch,
+      );
+      content = res.content;
+    } catch (err) {
+      if (repoPath !== path) {
+        const res = await getFileBinary(
+          token,
+          project.gitRepoOwner!,
+          project.gitRepoName!,
+          path,
+          project.defaultBranch,
+        );
+        content = res.content;
+      } else {
+        throw err;
+      }
+    }
 
     const ext = path.split(".").pop()?.toLowerCase() ?? "";
     const type =

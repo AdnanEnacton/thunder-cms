@@ -12,11 +12,16 @@ import {
   LogOut,
   User as UserIcon,
   ChevronDown,
+  ChevronRight,
   LayoutDashboard,
   FileText,
   Settings,
+  Folder,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/logo";
+import type { ContentEntrySummary } from "@thunder/types";
 
 export type ProjectView = "content" | "media" | "config";
 
@@ -57,6 +62,11 @@ interface ProjectSidebarProps {
   onCollectionSelect: (collection: SidebarCollection) => void;
   onConfigSelect?: (path: string) => void;
   user?: User;
+  
+  // Custom tree props
+  entries?: ContentEntrySummary[];
+  selectedEntryPath?: string | null;
+  onEntrySelect?: (path: string) => void;
 }
 
 export function ProjectSidebar({
@@ -71,6 +81,9 @@ export function ProjectSidebar({
   onCollectionSelect,
   onConfigSelect,
   user,
+  entries = [],
+  selectedEntryPath = null,
+  onEntrySelect,
 }: ProjectSidebarProps) {
   const router = useRouter();
   const activePath = usePathname();
@@ -79,6 +92,12 @@ export function ProjectSidebar({
   const [projects, setProjects] = useState<Project[]>([]);
   const [isProjectOpen, setIsProjectOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
+  // Accordions expanded states
+  const [isContentExpanded, setIsContentExpanded] = useState(true);
+  const [isConfigsExpanded, setIsConfigsExpanded] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
   const projectRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -112,6 +131,19 @@ export function ProjectSidebar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Auto-expand collection group on activeCollectionId change
+  useEffect(() => {
+    if (activeCollectionId && collections.length > 0) {
+      const activeCollection = collections.find((c) => c.id === activeCollectionId);
+      if (activeCollection && activeCollection.group) {
+        setExpandedGroups((prev) => ({
+          ...prev,
+          [activeCollection.group!]: true,
+        }));
+      }
+    }
+  }, [activeCollectionId, collections]);
+
   // Extract current project ID from pathname
   const currentProjectId = activePath.match(/\/dashboard\/projects\/([^\/]+)/)?.[1];
 
@@ -124,10 +156,24 @@ export function ProjectSidebar({
     ? user.name.charAt(0).toUpperCase()
     : (user?.email ? user.email.charAt(0).toUpperCase() : "?");
 
+  const toggleGroup = (groupKey: string) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [groupKey]: !prev[groupKey],
+    }));
+  };
+
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200/80 bg-white">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-slate-200/80 bg-white">
+      {/* Top Logo */}
+      <div className="flex h-14 items-center border-b border-slate-100 px-5">
+        <Link href="/dashboard" className="transition-opacity hover:opacity-90">
+          <Logo />
+        </Link>
+      </div>
+
       {/* Project Switcher Dropdown */}
-      <div className="border-b border-slate-100 px-4 py-3" ref={projectRef}>
+      <div className="px-4 py-3 border-b border-slate-100" ref={projectRef}>
         <div className="relative">
           <button
             type="button"
@@ -193,8 +239,22 @@ export function ProjectSidebar({
         </div>
       </div>
 
-      {/* Main Navigation - Sidebar Navigation buttons */}
+      {/* Main Navigation - Dashboard, Settings, Media Library */}
       <nav className="border-b border-slate-100 p-3 space-y-1">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-150"
+        >
+          <LayoutDashboard className="h-4 w-4 shrink-0 text-slate-400" />
+          Dashboard
+        </Link>
+        <Link
+          href="/dashboard/settings"
+          className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-150"
+        >
+          <Settings className="h-4 w-4 shrink-0 text-slate-400" />
+          Settings
+        </Link>
         <SidebarNavButton
           active={view === "media"}
           icon={<ImageIcon className="h-4 w-4" />}
@@ -205,54 +265,85 @@ export function ProjectSidebar({
 
       {/* Scrollable middle panel containing Content Collections and Configurations */}
       <div className="flex-1 overflow-auto p-3 space-y-5">
+        {/* Content Section */}
         <div>
-          <p className="px-3.5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            Content
-          </p>
-          {contentRoots.length === 0 ? (
-            <p className="px-3.5 py-2 text-xs text-slate-400 italic">No collections found</p>
-          ) : (
-            <div className="space-y-0.5">
-              {contentRoots.map((root) => (
-                <CollectionGroup
-                  key={root.key}
-                  root={root}
-                  view={view}
-                  activeCollectionId={activeCollectionId}
-                  onCollectionSelect={onCollectionSelect}
-                  onViewChange={onViewChange}
-                />
-              ))}
-            </div>
+          <button
+            type="button"
+            onClick={() => setIsContentExpanded(!isContentExpanded)}
+            className="flex w-full items-center justify-between px-3.5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <span>Content</span>
+            {isContentExpanded ? (
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            )}
+          </button>
+          
+          {isContentExpanded && (
+            contentRoots.length === 0 ? (
+              <p className="px-3.5 py-2 text-xs text-slate-400 italic">No collections found</p>
+            ) : (
+              <div className="space-y-1">
+                {contentRoots.map((root) => (
+                  <CollectionGroup
+                    key={root.key}
+                    root={root}
+                    view={view}
+                    activeCollectionId={activeCollectionId}
+                    onCollectionSelect={onCollectionSelect}
+                    onViewChange={onViewChange}
+                    expandedGroups={expandedGroups}
+                    onToggleGroup={toggleGroup}
+                    entries={entries}
+                    selectedEntryPath={selectedEntryPath}
+                    onEntrySelect={onEntrySelect}
+                  />
+                ))}
+              </div>
+            )
           )}
         </div>
 
+        {/* Config Files Section */}
         <div>
-          <p className="px-3.5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            Config Files
-          </p>
-          {configLoading ? (
-            <p className="px-3.5 py-2 text-xs text-slate-400">Loading...</p>
-          ) : configFiles.length === 0 ? (
-            <p className="px-3.5 py-2 text-xs text-slate-400 italic">No config files</p>
-          ) : (
-            <div className="space-y-0.5">
-              {configFiles.map((file) => (
-                <button
-                  key={file.path}
-                  type="button"
-                  onClick={() => onConfigSelect?.(file.path)}
-                  className={cn(
-                    "flex w-full items-center rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-all duration-150",
-                    view === "config" && activeConfigPath === file.path
-                      ? "bg-thunder-50 text-thunder-700 shadow-sm shadow-thunder-50/50"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-                  )}
-                >
-                  <span className="truncate">{file.name}</span>
-                </button>
-              ))}
-            </div>
+          <button
+            type="button"
+            onClick={() => setIsConfigsExpanded(!isConfigsExpanded)}
+            className="flex w-full items-center justify-between px-3.5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <span>Config Files</span>
+            {isConfigsExpanded ? (
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+            )}
+          </button>
+
+          {isConfigsExpanded && (
+            configLoading ? (
+              <p className="px-3.5 py-2 text-xs text-slate-400">Loading...</p>
+            ) : configFiles.length === 0 ? (
+              <p className="px-3.5 py-2 text-xs text-slate-400 italic">No config files</p>
+            ) : (
+              <div className="space-y-0.5">
+                {configFiles.map((file) => (
+                  <button
+                    key={file.path}
+                    type="button"
+                    onClick={() => onConfigSelect?.(file.path)}
+                    className={cn(
+                      "flex w-full items-center rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-all duration-150",
+                      view === "config" && activeConfigPath === file.path
+                        ? "bg-thunder-50 text-thunder-700 shadow-sm shadow-thunder-50/50"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                    )}
+                  >
+                    <span className="truncate">{file.name}</span>
+                  </button>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>
@@ -323,44 +414,112 @@ function CollectionGroup({
   activeCollectionId,
   onCollectionSelect,
   onViewChange,
+  expandedGroups,
+  onToggleGroup,
+  entries = [],
+  selectedEntryPath = null,
+  onEntrySelect,
 }: {
   root: ContentRootGroup;
   view: ProjectView;
   activeCollectionId: string | null;
   onCollectionSelect: (collection: SidebarCollection) => void;
   onViewChange: (view: ProjectView) => void;
+  expandedGroups: Record<string, boolean>;
+  onToggleGroup: (groupKey: string) => void;
+  entries?: ContentEntrySummary[];
+  selectedEntryPath?: string | null;
+  onEntrySelect?: (path: string) => void;
 }) {
+  const isGroupExpanded = !!expandedGroups[root.key];
+
   if (root.locales.length === 0) {
     const collection = root.defaultCollection;
     if (!collection) return null;
 
+    const isActive = view === "content" && activeCollectionId === collection.id;
+
     return (
-      <SidebarItem
-        label={root.label}
-        active={view === "content" && activeCollectionId === collection.id}
-        onClick={() => {
-          onViewChange("content");
-          onCollectionSelect(collection);
-        }}
-      />
+      <div className="space-y-0.5">
+        <SidebarItem
+          label={root.label}
+          active={isActive}
+          onClick={() => {
+            onViewChange("content");
+            onCollectionSelect(collection);
+          }}
+        />
+        {isActive && entries.length > 0 && (
+          <div className="space-y-0.5 mt-0.5 pl-3 border-l border-slate-100 ml-5">
+            {entries.map((entry) => (
+              <SidebarEntryItem
+                key={entry.path}
+                label={entry.title}
+                active={selectedEntryPath === entry.path}
+                onClick={() => onEntrySelect?.(entry.path)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     );
   }
 
   return (
     <div className="space-y-0.5">
-      <div className="px-3.5 py-1 text-xs font-medium text-slate-400 capitalize">{root.label}</div>
-      {root.locales.map((locale) => (
-        <SidebarItem
-          key={locale.id}
-          label={locale.label}
-          indent
-          active={view === "content" && activeCollectionId === locale.id}
-          onClick={() => {
-            onViewChange("content");
-            onCollectionSelect(locale);
-          }}
-        />
-      ))}
+      <button
+        type="button"
+        onClick={() => onToggleGroup(root.key)}
+        className="flex w-full items-center justify-between rounded-xl px-3.5 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-150 capitalize"
+      >
+        <div className="flex items-center gap-2">
+          {isGroupExpanded ? (
+            <FolderOpen className="h-4 w-4 shrink-0 text-slate-400" />
+          ) : (
+            <Folder className="h-4 w-4 shrink-0 text-slate-400" />
+          )}
+          <span className="truncate">{root.label}</span>
+        </div>
+        {isGroupExpanded ? (
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+        )}
+      </button>
+
+      {isGroupExpanded && (
+        <div className="space-y-0.5 mt-0.5 pl-3 border-l border-slate-100 ml-5">
+          {root.locales.map((locale) => {
+            const isActive = view === "content" && activeCollectionId === locale.id;
+
+            return (
+              <div key={locale.id} className="space-y-0.5">
+                <SidebarItem
+                  label={locale.label}
+                  active={isActive}
+                  indent={false}
+                  onClick={() => {
+                    onViewChange("content");
+                    onCollectionSelect(locale);
+                  }}
+                />
+                {isActive && entries.length > 0 && (
+                  <div className="space-y-0.5 mt-0.5 pl-3 border-l border-slate-100 ml-3">
+                    {entries.map((entry) => (
+                      <SidebarEntryItem
+                        key={entry.path}
+                        label={entry.title}
+                        active={selectedEntryPath === entry.path}
+                        onClick={() => onEntrySelect?.(entry.path)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -381,7 +540,7 @@ function SidebarItem({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center rounded-xl py-2.5 text-left text-sm font-medium transition-all duration-150 capitalize",
+        "flex w-full items-center rounded-xl py-2 text-left text-sm font-medium transition-all duration-150 capitalize",
         indent ? "pl-7 pr-3" : "px-3.5",
         active
           ? "bg-thunder-50 text-thunder-700 shadow-sm shadow-thunder-50/50"
@@ -389,6 +548,33 @@ function SidebarItem({
       )}
     >
       {label}
+    </button>
+  );
+}
+
+function SidebarEntryItem({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center gap-2 rounded-lg py-1 px-2.5 text-left text-xs font-normal transition-all duration-150 truncate",
+        active
+          ? "bg-slate-100 text-slate-900 font-medium"
+          : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
+      )}
+      title={label}
+    >
+      <FileText className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+      <span className="truncate">{label}</span>
     </button>
   );
 }

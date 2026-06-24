@@ -169,6 +169,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
                 value={frontmatter.draft}
                 onChange={(v) => updateField("draft", v)}
                 compact
+                projectId={projectId}
               />
             )}
 
@@ -179,6 +180,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
                 value={frontmatter[field.name]}
                 onChange={(v) => updateField(field.name, v)}
                 compact
+                projectId={projectId}
               />
             ))}
 
@@ -189,6 +191,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
                 value={frontmatter[name]}
                 onChange={(v) => updateField(name, v)}
                 compact
+                projectId={projectId}
               />
             ))}
 
@@ -199,12 +202,15 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
                 onExpand={setExpandedSectionIndex}
                 onSectionChange={updateSection}
                 templateOptions={templateOptions}
+                projectId={projectId}
               />
             )}
           </div>
         </div>
 
         <BodyEditor
+          key={filePath}
+          projectId={projectId}
           value={body}
           onChange={setBody}
           mode={bodyMode}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { commitBinaryFile, deleteFile, getRepoTree } from "@/lib/github";
-import { getMediaFolders, listMediaFiles } from "@/lib/media/scan";
+import { getMediaFolders, listMediaFiles, toPublicPath } from "@/lib/media/scan";
 import { getProjectForUser } from "@/lib/project-auth";
 import { prisma } from "@thunder/database";
 
@@ -98,7 +98,12 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({ path, commitSha });
+    const publicPath =
+      project.mediaPublic && project.mediaRoot
+        ? toPublicPath(path, project.mediaRoot, project.mediaPublic)
+        : `/${path}`;
+
+    return NextResponse.json({ path, publicPath, commitSha });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Failed to upload file";
     return NextResponse.json({ error: msg }, { status: 500 });

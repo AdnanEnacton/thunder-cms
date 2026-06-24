@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@thunder/database", "@thunder/types"],
+  transpilePackages: ["@thunder/database", "@thunder/types", "@mdxeditor/editor"],
 };
 
 export default nextConfig;

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",
+    "@mdxeditor/editor": "^4.0.4",
     "@octokit/rest": "^21.1.1",
     "@prisma/client": "^6.9.0",
     "@thunder/database": "workspace:*",

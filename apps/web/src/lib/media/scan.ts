@@ -35,6 +35,35 @@ export function toPublicPath(
   return `${publicBase.startsWith("/") ? "" : "/"}${publicBase}${relative}`.replace(/\\/g, "/");
 }
 
+export function fromPublicPath(
+  publicPath: string,
+  mediaRoot: string,
+  mediaPublic: string,
+): string {
+  const normalized = publicPath.startsWith("/") ? publicPath : `/${publicPath}`;
+  const publicBase = mediaPublic.startsWith("/") ? mediaPublic.slice(1) : mediaPublic;
+  const publicBaseClean = publicBase.endsWith("/") ? publicBase.slice(0, -1) : publicBase;
+
+  if (publicBaseClean) {
+    const publicPrefix = `/${publicBaseClean}`;
+    if (normalized.startsWith(`${publicPrefix}/`) || normalized === publicPrefix) {
+      const relative = normalized.slice(publicPrefix.length);
+      return `${publicBaseClean}${relative}`.replace(/\/+/g, "/");
+    }
+  }
+
+  const mediaFolder = mediaRoot.split("/").pop() ?? "";
+  if (mediaFolder) {
+    const sitePrefix = `/${mediaFolder}`;
+    if (normalized.startsWith(`${sitePrefix}/`) || normalized === sitePrefix) {
+      const relative = normalized.slice(sitePrefix.length);
+      return `${mediaRoot}${relative}`.replace(/\/+/g, "/");
+    }
+  }
+
+  return publicPath.startsWith("/") ? publicPath.slice(1) : publicPath;
+}
+
 export function listMediaFiles(
   tree: GitTreeEntry[],
   mediaRoot: string,

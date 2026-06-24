@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageFieldInput } from "@/components/content/image-field-input";
 import { ItemList } from "@/components/content/item-list";
 import {
   collectTemplateOptions,
@@ -26,6 +27,7 @@ interface VisualValueEditorProps {
   depth?: number;
   templateOptions?: string[];
   variant?: EditorVariant;
+  projectId?: string;
 }
 
 export function VisualValueEditor({
@@ -36,6 +38,7 @@ export function VisualValueEditor({
   depth = 0,
   templateOptions,
   variant = "default",
+  projectId,
 }: VisualValueEditorProps) {
   const control = inferControlKind(fieldKey, value);
   const id = `field-${fieldKey}-${depth}`;
@@ -58,6 +61,7 @@ export function VisualValueEditor({
         depth={depth}
         templateOptions={templateOptions}
         variant={variant}
+        projectId={projectId}
       />
     );
   }
@@ -71,6 +75,7 @@ export function VisualValueEditor({
         onChange={onChange}
         depth={depth}
         variant={variant}
+        projectId={projectId}
       />
     );
   }
@@ -144,6 +149,19 @@ export function VisualValueEditor({
     );
   }
 
+  if (control === "image") {
+    return (
+      <ImageFieldInput
+        id={id}
+        label={label ?? humanizeFieldKey(fieldKey)}
+        value={String(value ?? "")}
+        onChange={onChange}
+        projectId={projectId}
+        variant={variant}
+      />
+    );
+  }
+
   if (control === "textarea") {
     return (
       <div className={variant === "flat" ? "space-y-1.5" : "space-y-2"}>
@@ -205,6 +223,7 @@ function ObjectEditor({
   depth,
   templateOptions,
   variant,
+  projectId,
 }: {
   label?: string;
   fieldKey: string;
@@ -213,6 +232,7 @@ function ObjectEditor({
   depth: number;
   templateOptions?: string[];
   variant: EditorVariant;
+  projectId?: string;
 }) {
   const keys = sortObjectKeys(Object.keys(value));
   const isNestedGroup = depth > 0;
@@ -234,6 +254,7 @@ function ObjectEditor({
           onChange={(next) => onChange({ ...value, [key]: next })}
           depth={depth + 1}
           variant={variant}
+          projectId={projectId}
         />
       ))}
     </div>
@@ -273,6 +294,7 @@ function ArrayEditor({
   onChange,
   depth,
   variant,
+  projectId,
 }: {
   label?: string;
   fieldKey: string;
@@ -280,6 +302,7 @@ function ArrayEditor({
   onChange: (value: unknown) => void;
   depth: number;
   variant: EditorVariant;
+  projectId?: string;
 }) {
   const templateOptions = fieldKey === "sections" ? collectTemplateOptions(value) : undefined;
   const isSections = fieldKey === "sections";
@@ -293,6 +316,7 @@ function ArrayEditor({
         items={value}
         onChange={onChange}
         templateOptions={templateOptions}
+        projectId={projectId}
       />
     );
   }
@@ -331,6 +355,7 @@ function ArrayEditor({
             }}
             depth={depth + 1}
             variant={variant}
+            projectId={projectId}
           />
         );
 

@@ -4,10 +4,45 @@ export type ControlKind =
   | "textarea"
   | "number"
   | "url"
+  | "image"
   | "select"
   | "tags"
   | "object"
   | "array";
+
+export function isImageFieldKey(key: string): boolean {
+  const k = key.toLowerCase();
+  return (
+    k === "image" ||
+    k === "thumbnail" ||
+    k === "cover" ||
+    k.endsWith("image") ||
+    k.endsWith("thumbnail") ||
+    k.endsWith("cover")
+  );
+}
+
+export function isImagePath(value: string): boolean {
+  return (
+    value.startsWith("data:image/") ||
+    /\.(png|jpe?g|gif|webp|svg|avif|ico)(\?.*)?$/i.test(value)
+  );
+}
+
+export function resolveImageUrl(imageUrl: string, projectId?: string): string {
+  if (!imageUrl) return "";
+  if (
+    imageUrl.startsWith("http://") ||
+    imageUrl.startsWith("https://") ||
+    imageUrl.startsWith("data:")
+  ) {
+    return imageUrl;
+  }
+  if (projectId) {
+    return `/api/projects/${projectId}/media/raw?path=${encodeURIComponent(imageUrl)}`;
+  }
+  return imageUrl;
+}
 
 export function humanizeFieldKey(key: string): string {
   if (key === "_template") return "Type";
@@ -47,13 +82,10 @@ export function inferControlKind(key: string, value: unknown): ControlKind {
     ) {
       return "textarea";
     }
-    if (
-      k.includes("link") ||
-      k.includes("url") ||
-      k.includes("href") ||
-      k === "src" ||
-      k.includes("image")
-    ) {
+    if (isImageFieldKey(k) || (isImagePath(value) && !k.includes("link") && !k.includes("url") && k !== "href")) {
+      return "image";
+    }
+    if (k.includes("link") || k.includes("url") || k.includes("href") || k === "src") {
       return "url";
     }
     if (value.length > 120) return "textarea";
