@@ -61,7 +61,7 @@ export function addTableRowBelow(ctx: TableContext): void {
 
   for (let i = 0; i < cols; i++) {
     const cell = newRow.insertCell(i);
-    cell.innerHTML = "<br>";
+    cell.innerHTML = "&nbsp;";
   }
 
   focusTableCell(newRow.cells[0]);
@@ -75,7 +75,7 @@ export function addTableRowAbove(ctx: TableContext): void {
 
   for (let i = 0; i < cols; i++) {
     const cell = newRow.insertCell(i);
-    cell.innerHTML = "<br>";
+    cell.innerHTML = "&nbsp;";
   }
 
   focusTableCell(newRow.cells[0]);
@@ -90,7 +90,7 @@ function insertHeaderCell(row: HTMLTableRowElement, index: number, label: string
 
 function insertBodyCell(row: HTMLTableRowElement, index: number) {
   const td = document.createElement("td");
-  td.innerHTML = "<br>";
+  td.innerHTML = "&nbsp;";
   const ref = row.cells[index] ?? null;
   row.insertBefore(td, ref);
 }
@@ -166,13 +166,13 @@ export function buildTableMarkdown(columns: number, rows: number): string {
   const cols = Math.max(1, Math.min(columns, 10));
   const bodyRows = Math.max(1, Math.min(rows, 20));
 
-  const headers = Array.from({ length: cols }, (_, i) => `Column ${i + 1}`).join(" | ");
-  const sep = Array.from({ length: cols }, () => "---").join(" | ");
+  const headerRow = `| ${Array.from({ length: cols }, (_, i) => `Column ${i + 1}`).join(" | ")} |`;
+  const sepRow = `| ${Array.from({ length: cols }, () => "---").join(" | ")} |`;
   const body = Array.from({ length: bodyRows }, () =>
-    Array.from({ length: cols }, () => " ").join(" | "),
-  ).join("\n| ");
+    `| ${Array.from({ length: cols }, () => "").join(" | ")} |`,
+  ).join("\n");
 
-  return `\n\n| ${headers} |\n| ${sep} |\n| ${body} |\n\n`;
+  return `\n\n${headerRow}\n${sepRow}\n${body}\n\n`;
 }
 
 export function buildTableHtml(columns: number, rows: number): string {
@@ -181,7 +181,7 @@ export function buildTableHtml(columns: number, rows: number): string {
 
   const headers = Array.from({ length: cols }, (_, i) => `<th>Column ${i + 1}</th>`).join("");
   const body = Array.from({ length: bodyRows }, () => {
-    const cells = Array.from({ length: cols }, () => "<td><br></td>").join("");
+    const cells = Array.from({ length: cols }, () => "<td>&nbsp;</td>").join("");
     return `<tr>${cells}</tr>`;
   }).join("");
 
@@ -190,4 +190,33 @@ export function buildTableHtml(columns: number, rows: number): string {
     `<table class="notion-table"><thead><tr>${headers}</tr></thead><tbody>${body}</tbody></table>` +
     `</div>`
   );
+}
+
+export function insertTableAtSelection(
+  editor: HTMLElement,
+  columns: number,
+  rows: number,
+): HTMLTableElement | null {
+  const container = document.createElement("div");
+  container.innerHTML = buildTableHtml(columns, rows);
+  const tableWrap = container.firstElementChild;
+  if (!tableWrap) return null;
+
+  const sel = window.getSelection();
+  if (sel?.rangeCount) {
+    const range = sel.getRangeAt(0);
+    if (editor.contains(range.commonAncestorContainer)) {
+      range.deleteContents();
+      range.insertNode(tableWrap);
+    } else {
+      editor.appendChild(tableWrap);
+    }
+  } else {
+    editor.appendChild(tableWrap);
+  }
+
+  const table = tableWrap.querySelector("table");
+  const firstCell = table?.querySelector("tbody td") as HTMLTableCellElement | null;
+  focusTableCell(firstCell);
+  return table;
 }

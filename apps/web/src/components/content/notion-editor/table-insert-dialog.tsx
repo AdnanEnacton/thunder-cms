@@ -18,9 +18,15 @@ export function TableInsertDialog({ open, onClose, onInsert }: TableInsertDialog
 
   if (!open) return null;
 
+  function parseDimension(value: string, fallback: number, max: number): number {
+    const parsed = Number.parseInt(value.trim(), 10);
+    if (Number.isNaN(parsed)) return fallback;
+    return Math.max(1, Math.min(max, parsed));
+  }
+
   function handleInsert() {
-    const cols = Math.max(1, Math.min(10, Number.parseInt(columns, 10) || 2));
-    const rowCount = Math.max(1, Math.min(20, Number.parseInt(rows, 10) || 2));
+    const cols = parseDimension(columns, 3, 10);
+    const rowCount = parseDimension(rows, 3, 20);
     onInsert(cols, rowCount);
     onClose();
     setColumns("3");

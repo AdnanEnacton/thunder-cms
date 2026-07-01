@@ -20,8 +20,8 @@ import {
   addTableColumnRight,
   addTableRowAbove,
   addTableRowBelow,
-  buildTableHtml,
   buildTableMarkdown,
+  insertTableAtSelection,
   canDeleteTableColumn,
   canDeleteTableRow,
   deleteTableColumn,
@@ -671,9 +671,10 @@ function VisualSurface({
   }
 
   function handleTableInsert(columns: number, rows: number) {
-    document.execCommand("insertHTML", false, buildTableHtml(columns, rows));
+    if (!editorRef.current) return;
+    insertTableAtSelection(editorRef.current, columns, rows);
     syncFromHtml();
-    editorRef.current?.focus();
+    editorRef.current.focus();
     requestAnimationFrame(updateTableToolbar);
   }
 
