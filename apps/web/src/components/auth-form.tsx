@@ -3,9 +3,23 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+function FormDivider() {
+  return (
+    <div className="relative my-2">
+      <div className="absolute inset-0 flex items-center">
+        <div className="w-full border-t border-border" />
+      </div>
+      <div className="relative flex justify-center text-xs">
+        <span className="bg-surface-raised px-3 text-muted">or continue with</span>
+      </div>
+    </div>
+  );
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -45,6 +59,7 @@ export function LoginForm() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@company.com"
           required
         />
       </div>
@@ -55,19 +70,26 @@ export function LoginForm() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
           required
         />
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Signing in..." : "Sign in"}
       </Button>
+      <FormDivider />
       <Button
         type="button"
         variant="secondary"
         className="w-full"
         onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
       >
+        <Github className="h-4 w-4" />
         Continue with GitHub
       </Button>
     </form>
@@ -121,7 +143,13 @@ export function RegisterForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
-        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <Input
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Jane Smith"
+          required
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
@@ -130,6 +158,7 @@ export function RegisterForm() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@company.com"
           required
         />
       </div>
@@ -140,20 +169,27 @@ export function RegisterForm() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          placeholder="Min. 8 characters"
           minLength={8}
           required
         />
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Creating account..." : "Create account"}
       </Button>
+      <FormDivider />
       <Button
         type="button"
         variant="secondary"
         className="w-full"
         onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
       >
+        <Github className="h-4 w-4" />
         Sign up with GitHub
       </Button>
     </form>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FileCode2, Settings2 } from "lucide-react";
 import type { ConfigFileSummary } from "@thunder/types";
 import { ConfigFileEditor } from "@/components/project/config-file-editor";
+import { LoadingState } from "@/components/ui/loading-state";
 
 interface ConfigPanelProps {
   projectId: string;
@@ -48,32 +49,49 @@ export function ConfigPanel({ projectId, selectedFile, onSelectFile }: ConfigPan
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      {error && <p className="px-6 py-2 text-sm text-red-400">{error}</p>}
+    <div className="flex flex-1 flex-col overflow-hidden bg-surface">
+      {error && (
+        <p className="border-b border-destructive/20 bg-destructive/5 px-6 py-2.5 text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center text-muted">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
         {loading ? (
-          <p>Loading config files...</p>
+          <LoadingState
+            variant="panel"
+            title="Loading config files"
+            description="Scanning configuration paths in your repository."
+          />
         ) : configPaths.length === 0 ? (
           <>
-            <Settings2 className="h-10 w-10" />
-            <p>No config paths configured for this project.</p>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-overlay">
+              <Settings2 className="h-7 w-7 text-muted" />
+            </div>
+            <div>
+              <p className="font-medium">No config paths configured</p>
+              <p className="mt-1 text-sm text-muted">
+                Add config paths during project setup to edit configuration files.
+              </p>
+            </div>
             <Link
               href={`/dashboard/projects/${projectId}/setup`}
-              className="text-sm text-thunder-400 hover:underline"
+              className="text-sm font-medium text-thunder-600 hover:text-thunder-700 hover:underline"
             >
-              Add config paths in setup
+              Re-run setup
             </Link>
-          </>
-        ) : files.length === 0 ? (
-          <>
-            <FileCode2 className="h-10 w-10" />
-            <p>No config files found at the configured paths.</p>
           </>
         ) : (
           <>
-            <FileCode2 className="h-10 w-10" />
-            <p>Select a config file from the sidebar to edit.</p>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-overlay">
+              <FileCode2 className="h-7 w-7 text-muted" />
+            </div>
+            <div>
+              <p className="font-medium">Select a config file</p>
+              <p className="mt-1 text-sm text-muted">
+                Choose a file from the sidebar to start editing.
+              </p>
+            </div>
           </>
         )}
       </div>

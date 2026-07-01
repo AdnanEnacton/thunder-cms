@@ -34,9 +34,9 @@ interface DashboardSidebarProps {
 }
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/projects", label: "Projects", icon: FolderGit2 },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/projects", label: "Projects", icon: FolderGit2, exact: false },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: true },
 ];
 
 export function DashboardSidebar({ user }: DashboardSidebarProps) {
@@ -48,7 +48,6 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   const projectRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Fetch projects on mount
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -64,7 +63,6 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
     fetchProjects();
   }, []);
 
-  // Click outside handling
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (projectRef.current && !projectRef.current.contains(event.target as Node)) {
@@ -78,7 +76,6 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Try to find if currently viewing a project
   const currentProjectId = activePath.match(/\/dashboard\/projects\/([^\/]+)/)?.[1];
   const currentProject = projects.find((p) => p.id === currentProjectId);
 
@@ -87,41 +84,41 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
     router.push(`/dashboard/projects/${projectId}`);
   };
 
-  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : "?");
+  const userInitial = user?.name
+    ? user.name.charAt(0).toUpperCase()
+    : user?.email
+      ? user.email.charAt(0).toUpperCase()
+      : "?";
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-slate-200/80 bg-white">
-      {/* Top Logo */}
-      <div className="flex h-14 items-center border-b border-slate-100 px-5">
-        <Link href="/dashboard" className="transition-opacity hover:opacity-90">
+    <aside className="flex h-screen w-[260px] shrink-0 flex-col border-r border-border bg-surface-raised">
+      <div className="flex h-14 items-center px-5">
+        <Link href="/dashboard" className="transition-opacity hover:opacity-80">
           <Logo />
         </Link>
       </div>
 
-      {/* Project Switcher Dropdown */}
-      <div className="px-4 py-3" ref={projectRef}>
+      <div className="px-3 pb-3" ref={projectRef}>
         <div className="relative">
           <button
             type="button"
             onClick={() => setIsProjectOpen(!isProjectOpen)}
-            className="flex w-full items-center justify-between gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 px-3.5 py-2.5 text-left text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-thunder-500/10"
+            className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface-subtle px-3 py-2.5 text-left text-sm font-medium transition-all hover:border-thunder-300/50 hover:bg-surface-overlay focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
           >
-            <div className="flex items-center gap-2 truncate">
-              <FolderGit2 className="h-4 w-4 shrink-0 text-slate-400" />
-              <span className="truncate font-semibold text-slate-800">
-                {currentProject ? currentProject.name : "Select Project"}
+            <div className="flex min-w-0 items-center gap-2">
+              <FolderGit2 className="h-4 w-4 shrink-0 text-muted" />
+              <span className="truncate font-semibold text-foreground">
+                {currentProject ? currentProject.name : "Select project"}
               </span>
             </div>
-            <ChevronsUpDown className="h-4 w-4 shrink-0 text-slate-400" />
+            <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted" />
           </button>
 
           {isProjectOpen && (
-            <div className="absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-100/50 animate-in fade-in slide-in-from-top-1 duration-100">
-              <div className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                Switch Project
-              </div>
+            <div className="dropdown-menu absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto">
+              <div className="dropdown-label">Switch project</div>
               {projects.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-slate-400">No projects connected</div>
+                <div className="px-3 py-2 text-xs text-muted">No projects connected</div>
               ) : (
                 <div className="space-y-0.5">
                   {projects.map((project) => (
@@ -130,23 +127,21 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
                       type="button"
                       onClick={() => handleProjectSelect(project.id)}
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition-colors",
-                        project.id === currentProjectId
-                          ? "bg-slate-100 font-semibold text-slate-900"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                        "dropdown-item",
+                        project.id === currentProjectId && "dropdown-item-active",
                       )}
                     >
-                      <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-muted" />
                       <span className="truncate">{project.name}</span>
                     </button>
                   ))}
                 </div>
               )}
-              <div className="my-1 border-t border-slate-100" />
+              <div className="my-1 border-t border-border" />
               <Link
                 href="/dashboard/projects/new"
                 onClick={() => setIsProjectOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-thunder-600 hover:bg-thunder-50 transition-colors"
+                className="dropdown-item font-medium text-thunder-600 hover:text-thunder-700"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Connect new project
@@ -156,78 +151,74 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         </div>
       </div>
 
-      {/* Main Navigation Items */}
-      <nav className="flex-1 space-y-1 px-3 py-2">
+      <nav className="flex-1 space-y-0.5 px-3 py-2">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = activePath === item.href || (item.href !== "/dashboard" && activePath.startsWith(item.href));
+          const active = item.exact
+            ? activePath === item.href
+            : activePath === item.href || activePath.startsWith(item.href + "/");
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all duration-150",
-                active
-                  ? "bg-thunder-50 text-thunder-700 shadow-sm shadow-thunder-50/50"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-              )}
+              className={cn("nav-item", active && "nav-item-active")}
             >
-              <Icon className={cn("h-4 w-4 shrink-0 transition-colors", active ? "text-thunder-600" : "text-slate-400")} />
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  active ? "text-thunder-600" : "text-muted",
+                )}
+              />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      {/* User Profile Section at Bottom */}
-      <div className="border-t border-slate-100 p-4" ref={profileRef}>
+      <div className="border-t border-border p-3" ref={profileRef}>
         <div className="relative">
           <button
             type="button"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-slate-50 focus:outline-none transition-colors"
+            className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-surface-overlay focus:outline-none"
           >
             {user?.image ? (
               <img
                 src={user.image}
                 alt={user.name || "User Avatar"}
-                className="h-9 w-9 shrink-0 rounded-full bg-slate-100 object-cover"
+                className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-border"
               />
             ) : (
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-thunder-50 font-semibold text-thunder-700">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-thunder-100 text-xs font-semibold text-thunder-700">
                 {userInitial}
               </div>
             )}
-            <div className="flex-1 truncate">
-              <p className="truncate text-xs font-semibold text-slate-800">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-foreground">
                 {user?.name || "My Workspace"}
               </p>
-              <p className="truncate text-[10px] text-slate-400">
-                {user?.email || "No email"}
-              </p>
+              <p className="truncate text-[11px] text-muted">{user?.email || "No email"}</p>
             </div>
-            <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" />
           </button>
 
           {isProfileOpen && (
-            <div className="absolute bottom-full left-0 right-0 z-50 mb-1.5 rounded-xl border border-slate-200/90 bg-white p-1.5 shadow-xl shadow-slate-100/50 animate-in fade-in slide-in-from-bottom-1 duration-100">
-              <div className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                Account
-              </div>
+            <div className="dropdown-menu absolute bottom-full left-0 right-0 z-50 mb-1.5">
+              <div className="dropdown-label">Account</div>
               <Link
                 href="/dashboard/settings"
                 onClick={() => setIsProfileOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                className="dropdown-item"
               >
-                <UserIcon className="h-3.5 w-3.5 text-slate-400" />
-                Profile Settings
+                <UserIcon className="h-3.5 w-3.5 text-muted" />
+                Profile settings
               </Link>
-              <div className="my-1 border-t border-slate-100" />
+              <div className="my-1 border-t border-border" />
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                className="dropdown-item w-full font-medium text-destructive hover:bg-destructive/5"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Sign out

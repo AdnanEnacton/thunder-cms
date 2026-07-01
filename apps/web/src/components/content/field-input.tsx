@@ -77,9 +77,17 @@ export function FieldInput({ field, value, onChange, compact = false, projectId 
   }
 
   const fieldSpacing = compact ? "space-y-1.5" : "space-y-2";
+  const isLongText =
+    field.name.toLowerCase().includes("description") ||
+    field.name.toLowerCase().includes("keyword") ||
+    field.name.toLowerCase().includes("paragraph") ||
+    field.name.toLowerCase().includes("content");
+
+  const textareaRows = isLongText ? (compact ? 6 : 7) : compact ? 4 : 5;
+
   const textareaClass = compact
-    ? "flex w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-thunder-500 focus:outline-none focus:ring-1 focus:ring-thunder-500/20"
-    : "flex w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm shadow-sm focus:border-thunder-500 focus:outline-none focus:ring-2 focus:ring-thunder-500/20";
+    ? "flex min-h-[120px] w-full resize-y rounded-[10px] border border-border bg-surface-raised px-3.5 py-2.5 text-sm leading-relaxed focus:border-thunder-500 focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
+    : "flex min-h-[140px] w-full resize-y rounded-[10px] border border-border bg-surface-raised px-3.5 py-2.5 text-sm leading-relaxed shadow-xs focus:border-thunder-500 focus:outline-none focus:ring-2 focus:ring-thunder-500/20";
 
   if (fieldType === "tags") {
     const tags = Array.isArray(value) ? value.join(", ") : String(value ?? "");
@@ -115,7 +123,7 @@ export function FieldInput({ field, value, onChange, compact = false, projectId 
           id={id}
           value={String(value ?? "")}
           onChange={(e) => onChange(e.target.value)}
-          rows={compact ? 2 : 3}
+          rows={textareaRows}
           className={textareaClass}
         />
       </div>

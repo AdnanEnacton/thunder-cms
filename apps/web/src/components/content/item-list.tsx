@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { getListItemLabel, humanizeFieldKey } from "@/lib/content/field-ui";
 import { VisualValueEditor } from "@/components/content/visual-value-editor";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 interface ItemListProps {
@@ -13,6 +14,33 @@ interface ItemListProps {
   templateOptions?: string[];
   projectId?: string;
 }
+
+const ROW_VARIANTS = [
+  {
+    bar: "bg-thunder-500",
+    bg: "bg-thunder-50/80 hover:bg-thunder-50",
+    badge: "bg-thunder-100 text-thunder-700",
+    active: "ring-thunder-200",
+  },
+  {
+    bar: "bg-violet-500",
+    bg: "bg-violet-50/80 hover:bg-violet-50",
+    badge: "bg-violet-100 text-violet-700",
+    active: "ring-violet-200",
+  },
+  {
+    bar: "bg-emerald-500",
+    bg: "bg-emerald-50/80 hover:bg-emerald-50",
+    badge: "bg-emerald-100 text-emerald-700",
+    active: "ring-emerald-200",
+  },
+  {
+    bar: "bg-amber-500",
+    bg: "bg-amber-50/80 hover:bg-amber-50",
+    badge: "bg-amber-100 text-amber-700",
+    active: "ring-amber-200",
+  },
+] as const;
 
 function cloneItemTemplate(items: unknown[]): Record<string, unknown> {
   const sample = items.find(
@@ -36,18 +64,21 @@ function cloneItemTemplate(items: unknown[]): Record<string, unknown> {
 export function ItemList({ fieldKey, items, onChange, templateOptions, projectId }: ItemListProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const label = humanizeFieldKey(fieldKey);
 
   function handleAdd() {
     onChange([...items, cloneItemTemplate(items)]);
   }
 
-  function handleDelete(index: number) {
-    if (!confirm("Delete this item?")) return;
+  function confirmDelete() {
+    if (deleteIndex === null) return;
+    const index = deleteIndex;
     const next = items.filter((_, i) => i !== index);
     onChange(next);
     if (editingIndex === index) setEditingIndex(null);
     else if (editingIndex !== null && editingIndex > index) setEditingIndex(editingIndex - 1);
+    setDeleteIndex(null);
   }
 
   function handleUpdate(index: number, value: unknown) {
@@ -66,94 +97,137 @@ export function ItemList({ fieldKey, items, onChange, templateOptions, projectId
   }
 
   if (editingIndex !== null && items[editingIndex] !== undefined) {
+    const variant = ROW_VARIANTS[editingIndex % ROW_VARIANTS.length];
+
     return (
       <div className="space-y-4">
         <button
           type="button"
           onClick={() => setEditingIndex(null)}
-          className="text-sm text-thunder-600 hover:underline"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-sm font-medium text-thunder-600 shadow-xs transition-colors hover:bg-thunder-50 hover:text-thunder-700"
         >
-          ← Back to {label}
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to {label}
         </button>
-        <h4 className="text-sm font-semibold text-foreground">
-          {getListItemLabel(fieldKey, editingIndex)}
-        </h4>
-        <VisualValueEditor
-          fieldKey={`${fieldKey}[${editingIndex}]`}
-          value={items[editingIndex]}
-          templateOptions={templateOptions}
-          onChange={(value) => handleUpdate(editingIndex, value)}
-          variant="flat"
-          projectId={projectId}
-        />
+
+        <div className={cn("rounded-xl border border-border p-4", variant.bg)}>
+          <div className="mb-4 flex items-center gap-2">
+            <span className={cn("rounded-md px-2 py-0.5 text-xs font-semibold", variant.badge)}>
+              {getListItemLabel(fieldKey, editingIndex)}
+            </span>
+          </div>
+          <VisualValueEditor
+            fieldKey={`${fieldKey}[${editingIndex}]`}
+            value={items[editingIndex]}
+            templateOptions={templateOptions}
+            onChange={(value) => handleUpdate(editingIndex, value)}
+            variant="flat"
+            projectId={projectId}
+          />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted transition-colors hover:bg-surface-overlay hover:text-foreground"
-          title={`Add ${label} item`}
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+    <>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold tracking-tight text-foreground">{label}</p>
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-thunder-600 text-white shadow-sm transition-all hover:bg-thunder-700 hover:shadow-md"
+            title={`Add ${label} item`}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+
+        {items.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-border bg-surface-subtle px-4 py-4 text-center text-sm text-muted">
+            No items yet. Click + to add one.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item, index) => {
+              const variant = ROW_VARIANTS[index % ROW_VARIANTS.length];
+              const itemLabel = getListItemLabel(fieldKey, index);
+
+              return (
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (dragIndex !== null) handleReorder(dragIndex, index);
+                    setDragIndex(null);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                  className={cn(
+                    "group relative flex items-center gap-2 overflow-hidden rounded-xl border border-border pl-0 pr-2 shadow-xs transition-all",
+                    variant.bg,
+                    dragIndex === index && "opacity-50",
+                    "hover:shadow-sm",
+                  )}
+                >
+                  <div className={cn("w-1 shrink-0 self-stretch", variant.bar)} />
+
+                  <button
+                    type="button"
+                    className="cursor-grab px-1 text-muted/70 transition-colors hover:text-foreground active:cursor-grabbing"
+                    tabIndex={-1}
+                  >
+                    <GripVertical className="h-4 w-4" />
+                  </button>
+
+                  <span className={cn("shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold", variant.badge)}>
+                    {index + 1}
+                  </span>
+
+                  <span className="min-w-0 flex-1 truncate py-3 text-sm font-medium text-foreground">
+                    {itemLabel}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditingIndex(index)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-raised text-muted shadow-xs transition-all hover:border-thunder-300 hover:bg-thunder-50 hover:text-thunder-600"
+                    title="Edit"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDeleteIndex(index)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-raised text-muted shadow-xs transition-all hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {items.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted">
-          No items yet. Click + to add one.
-        </p>
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              draggable
-              onDragStart={() => setDragIndex(index)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => {
-                if (dragIndex !== null) handleReorder(dragIndex, index);
-                setDragIndex(null);
-              }}
-              onDragEnd={() => setDragIndex(null)}
-              className={cn(
-                "flex items-center gap-2 border-b border-border px-3 py-2.5 last:border-b-0",
-                dragIndex === index && "opacity-50",
-              )}
-            >
-              <button
-                type="button"
-                className="cursor-grab text-muted hover:text-foreground active:cursor-grabbing"
-                tabIndex={-1}
-              >
-                <GripVertical className="h-4 w-4" />
-              </button>
-              <span className="flex-1 text-sm text-foreground">
-                {getListItemLabel(fieldKey, index)}
-              </span>
-              <button
-                type="button"
-                onClick={() => setEditingIndex(index)}
-                className="rounded p-1 text-muted transition-colors hover:bg-surface-overlay hover:text-foreground"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(index)}
-                className="rounded p-1 text-muted transition-colors hover:bg-red-50 hover:text-red-600"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      <ConfirmDialog
+        open={deleteIndex !== null}
+        title="Delete this item?"
+        description={
+          deleteIndex !== null
+            ? `"${getListItemLabel(fieldKey, deleteIndex)}" will be removed. This change saves when you click Save.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteIndex(null)}
+      />
+    </>
   );
 }

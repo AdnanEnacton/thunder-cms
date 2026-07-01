@@ -14,6 +14,7 @@ import {
   type ProjectView,
   type SidebarConfigFile,
 } from "@/components/project/project-sidebar";
+import { LoadingState } from "@/components/ui/loading-state";
 
 interface Collection {
   id: string;
@@ -216,7 +217,13 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
   }
 
   if (loading) {
-    return <div className="p-8 text-muted">Scanning content from repository...</div>;
+    return (
+      <LoadingState
+        variant="fullscreen"
+        title="Scanning your repository"
+        description="Reading content collections and folder structure from GitHub."
+      />
+    );
   }
 
   function goBackFromEntry() {
@@ -278,13 +285,24 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
 
       <main className="flex flex-1 flex-col overflow-hidden">
         {view === "content" && collections.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 p-16 text-center text-muted">
-            <FileText className="h-10 w-10" />
-            <p>No content collections found in your configured folder.</p>
-            {error && <p className="text-sm text-red-400">{error}</p>}
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-surface p-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-overlay">
+              <FileText className="h-7 w-7 text-muted" />
+            </div>
+            <div>
+              <p className="font-medium">No collections found</p>
+              <p className="mt-1 text-sm text-muted">
+                No content collections found in your configured folder.
+              </p>
+            </div>
+            {error && (
+              <p className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                {error}
+              </p>
+            )}
             <Link
               href={`/dashboard/projects/${projectId}/setup`}
-              className="text-sm text-thunder-400 hover:underline"
+              className="text-sm font-medium text-thunder-600 hover:text-thunder-700 hover:underline"
             >
               Re-run setup
             </Link>

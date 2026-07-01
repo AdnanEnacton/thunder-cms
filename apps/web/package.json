@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",
-    "@mdxeditor/editor": "^4.0.4",
     "@octokit/rest": "^21.1.1",
     "@prisma/client": "^6.9.0",
     "@thunder/database": "workspace:*",
@@ -20,11 +19,14 @@
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.511.0",
+    "marked": "^18.0.5",
     "next": "^15.3.3",
     "next-auth": "^5.0.0-beta.28",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwind-merge": "^3.3.0",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2",
     "yaml": "^2.8.0",
     "zod": "^3.25.42"
   },
@@ -34,6 +36,7 @@
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
+    "@types/turndown": "^5.0.6",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3"
   }

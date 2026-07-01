@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@thunder/database";
 import { ProjectWorkspace } from "@/components/content/project-workspace";
+import { LoadingState } from "@/components/ui/loading-state";
 
 export default async function ProjectPage({
   params,
@@ -23,7 +24,15 @@ export default async function ProjectPage({
   }
 
   return (
-    <Suspense fallback={<div className="p-8 text-muted">Loading content...</div>}>
+    <Suspense
+      fallback={
+        <LoadingState
+          variant="fullscreen"
+          title="Opening project"
+          description="Preparing your content workspace."
+        />
+      }
+    >
       <ProjectWorkspace
         projectId={project.id}
         projectName={project.name}

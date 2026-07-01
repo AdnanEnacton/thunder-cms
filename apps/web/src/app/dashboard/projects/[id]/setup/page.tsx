@@ -22,12 +22,12 @@ export default async function ProjectSetupPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Configure {project.name}</h1>
-        <p className="text-muted">
+    <div className="mx-auto max-w-2xl space-y-8">
+      <div className="page-header">
+        <h1 className="page-title">Configure {project.name}</h1>
+        <p className="page-description">
           Tell THUNDER-CMS where your content and media live in{" "}
-          <span className="font-mono text-sm">{project.gitRepoFullName}</span>.
+          <span className="font-mono text-sm text-foreground">{project.gitRepoFullName}</span>.
         </p>
       </div>
       <SetupWizard

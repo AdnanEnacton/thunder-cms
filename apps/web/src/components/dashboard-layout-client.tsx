@@ -17,7 +17,6 @@ interface DashboardLayoutClientProps {
 export function DashboardLayoutClient({ children, user }: DashboardLayoutClientProps) {
   const pathname = usePathname();
 
-  // Match /dashboard/projects/[id] where [id] is not "new"
   const match = pathname.match(/^\/dashboard\/projects\/([^\/]+)$/);
   const isProjectWorkspace = match && match[1] !== "new";
 
@@ -26,15 +25,12 @@ export function DashboardLayoutClient({ children, user }: DashboardLayoutClientP
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50/50">
+    <div className="flex min-h-screen bg-surface">
       <DashboardSidebar user={user} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200/60 bg-white px-6">
-          <div className="text-xs font-medium text-slate-400">
-            Console
-          </div>
-        </header>
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto">
+          <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
+        </main>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Save, Trash2 } from "lucide-react";
 import type { ContentDocument, FieldSchema } from "@thunder/types";
 import { BodyEditor } from "@/components/content/body-editor";
 import { FieldInput } from "@/components/content/field-input";
@@ -10,6 +10,8 @@ import { SectionAccordion } from "@/components/content/section-accordion";
 import { collectTemplateOptions } from "@/lib/content/field-ui";
 import { inferFieldSchema } from "@/lib/content/schema";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { LoadingState } from "@/components/ui/loading-state";
 
 interface EntryEditorProps {
   projectId: string;
@@ -30,6 +32,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
   const [fields, setFields] = useState<FieldSchema[]>([]);
   const [bodyMode, setBodyMode] = useState<"visual" | "markdown">("visual");
   const [expandedSectionIndex, setExpandedSectionIndex] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -87,13 +90,11 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
     }
 
     if (data.sha) setSha(data.sha);
-    setSuccess("Saved successfully.");
+    setSuccess("Saved successfully");
     router.refresh();
   }
 
   async function handleDelete() {
-    if (!confirm("Delete this entry from your repository?")) return;
-
     const response = await fetch(
       `/api/projects/${projectId}/content/entry?path=${encodeURIComponent(filePath)}`,
       { method: "DELETE" },
@@ -110,7 +111,14 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
   }
 
   if (loading) {
-    return <div className="flex h-full items-center justify-center text-muted">Loading...</div>;
+    return (
+      <LoadingState
+        variant="panel"
+        title="Loading entry"
+        description="Fetching content and metadata from your repository."
+        className="h-full bg-surface"
+      />
+    );
   }
 
   const knownFieldNames = new Set(fields.map((f) => f.name));
@@ -119,27 +127,39 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
   const basicExtras = extraFields.filter((n) => n !== "sections" && n !== "draft");
   const sections = Array.isArray(frontmatter.sections) ? frontmatter.sections : [];
   const templateOptions = collectTemplateOptions(sections);
+  const entryTitle = (frontmatter.title as string) || filePath.split("/").pop() || "Untitled";
 
   return (
     <div className="flex h-full flex-col bg-surface">
       <header className="flex items-center justify-between border-b border-border bg-surface-raised px-5 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {onBack && (
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-1 text-sm text-muted hover:text-foreground"
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-muted transition-colors hover:bg-surface-overlay hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>
           )}
+          <div className="min-w-0 border-l border-border pl-3">
+            <p className="truncate text-sm font-semibold tracking-tight">{entryTitle}</p>
+            <p className="truncate font-mono text-[11px] text-muted">{filePath}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={handleDelete}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-muted hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
             Delete
           </Button>
           <Button size="sm" onClick={handleSave} disabled={saving}>
+            <Save className="h-3.5 w-3.5" />
             {saving ? "Saving..." : "Save"}
           </Button>
         </div>
@@ -148,12 +168,12 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
       {(error || success) && (
         <div className="border-b border-border px-5 py-2">
           {error && (
-            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700">
+            <p className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-1.5 text-sm text-destructive">
               {error}
             </p>
           )}
           {success && (
-            <p className="rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-sm text-green-700">
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-700">
               {success}
             </p>
           )}
@@ -161,8 +181,13 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
       )}
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex w-[min(520px,48%)] shrink-0 flex-col overflow-auto border-r border-border bg-surface-raised px-5 py-5">
-          <div className="space-y-5">
+        <div className="flex w-[min(520px,48%)] shrink-0 flex-col overflow-auto border-r border-border bg-surface-raised">
+          <div className="border-b border-border px-5 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Metadata
+            </p>
+          </div>
+          <div className="space-y-5 px-5 py-5">
             {typeof frontmatter.draft === "boolean" && (
               <FieldInput
                 field={{ name: "draft", type: "boolean", label: "Draft" }}
@@ -217,6 +242,19 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           onModeChange={setBodyMode}
         />
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete this entry?"
+        description="This will permanently remove the file from your GitHub repository."
+        confirmLabel="Delete entry"
+        variant="destructive"
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          handleDelete();
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

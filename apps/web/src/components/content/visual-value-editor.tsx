@@ -163,6 +163,14 @@ export function VisualValueEditor({
   }
 
   if (control === "textarea") {
+    const keyLower = fieldKey.toLowerCase();
+    const isLongText =
+      keyLower.includes("description") ||
+      keyLower.includes("keyword") ||
+      keyLower.includes("paragraph") ||
+      keyLower.includes("content");
+    const rows = isLongText ? (variant === "flat" ? 6 : 7) : variant === "flat" ? 4 : 5;
+
     return (
       <div className={variant === "flat" ? "space-y-1.5" : "space-y-2"}>
         <Label htmlFor={id} className="text-sm font-medium text-foreground">
@@ -172,11 +180,11 @@ export function VisualValueEditor({
           id={id}
           value={String(value ?? "")}
           onChange={(e) => onChange(e.target.value)}
-          rows={variant === "flat" ? 3 : 4}
+          rows={rows}
           className={
             variant === "flat"
-              ? "flex w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:border-thunder-500 focus:outline-none focus:ring-1 focus:ring-thunder-500/20"
-              : "flex w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm shadow-sm focus:border-thunder-500 focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
+              ? "flex min-h-[120px] w-full resize-y rounded-[10px] border border-border bg-surface-raised px-3.5 py-2.5 text-sm leading-relaxed focus:border-thunder-500 focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
+              : "flex min-h-[140px] w-full resize-y rounded-[10px] border border-border bg-surface-raised px-3.5 py-2.5 text-sm leading-relaxed shadow-xs focus:border-thunder-500 focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
           }
         />
       </div>
