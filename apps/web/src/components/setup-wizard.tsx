@@ -43,6 +43,8 @@ export function SetupWizard({
   const [mediaPublic, setMediaPublic] = useState("");
   const [codeRoot, setCodeRoot] = useState("");
   const [configPaths, setConfigPaths] = useState("");
+  const [commitMessageMode, setCommitMessageMode] = useState<"auto" | "custom">("auto");
+  const [previewUrl, setPreviewUrl] = useState("");
 
   useEffect(() => {
     async function loadTree() {
@@ -108,7 +110,8 @@ export function SetupWizard({
         configPaths: configPaths
           ? configPaths.split(",").map((p) => p.trim()).filter(Boolean)
           : undefined,
-        commitMessageMode: "auto",
+        commitMessageMode,
+        previewUrl: previewUrl || undefined,
       }),
     });
 
@@ -247,15 +250,44 @@ export function SetupWizard({
           )}
 
           {step === 3 && (
-            <div className="space-y-3 rounded-xl border border-border bg-surface-subtle p-5 text-sm">
-              <Row label="Content folder" value={contentRoot} />
-              <Row label="Media root" value={mediaRoot} />
-              <Row label="Media public" value={mediaPublic} />
-              {codeRoot && <Row label="Code folder" value={codeRoot} />}
-              {configPaths && <Row label="Config paths" value={configPaths} />}
-              <p className="border-t border-border pt-3 text-xs text-muted">
-                Saving will commit <code className="rounded bg-surface-overlay px-1.5 py-0.5 font-mono text-xs">.thunder/config.json</code> to your repository.
-              </p>
+            <div className="space-y-4">
+              <div className="space-y-3 rounded-xl border border-border bg-surface-subtle p-5 text-sm">
+                <Row label="Content folder" value={contentRoot} />
+                <Row label="Media root" value={mediaRoot} />
+                <Row label="Media public" value={mediaPublic} />
+                {codeRoot && <Row label="Code folder" value={codeRoot} />}
+                {configPaths && <Row label="Config paths" value={configPaths} />}
+                <p className="border-t border-border pt-3 text-xs text-muted">
+                  Saving will commit <code className="rounded bg-surface-overlay px-1.5 py-0.5 font-mono text-xs">.thunder/config.json</code> to your repository.
+                </p>
+              </div>
+
+              <div className="space-y-3 rounded-xl border border-border bg-surface-subtle p-5">
+                <div className="space-y-2">
+                  <Label htmlFor="commitMode">Commit messages</Label>
+                  <select
+                    id="commitMode"
+                    value={commitMessageMode}
+                    onChange={(e) => setCommitMessageMode(e.target.value as "auto" | "custom")}
+                    className="flex h-10 w-full rounded-[10px] border border-border bg-surface-raised px-3.5 text-sm shadow-xs focus-visible:border-thunder-500 focus-visible:outline-none"
+                  >
+                    <option value="auto">Auto-generate (e.g. Update: "Title")</option>
+                    <option value="custom">Ask me before each save</option>
+                  </select>
+                  <p className="text-xs text-muted">In custom mode, a dialog asks for a commit message on each save.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="previewUrl">Preview URL (optional)</Label>
+                  <Input
+                    id="previewUrl"
+                    value={previewUrl}
+                    onChange={(e) => setPreviewUrl(e.target.value)}
+                    placeholder="https://your-staging-site.vercel.app"
+                  />
+                  <p className="text-xs text-muted">A staging URL shown in the editor's live preview pane.</p>
+                </div>
+              </div>
             </div>
           )}
 

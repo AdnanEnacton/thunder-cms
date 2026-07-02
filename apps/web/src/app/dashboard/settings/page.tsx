@@ -1,5 +1,6 @@
-import { Bell, Github, User } from "lucide-react";
+import { Bell, Github, Sparkles, User } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AiKeySettings } from "@/components/ai-key-settings";
 
 const settingsSections = [
   {
@@ -49,6 +50,21 @@ export default function SettingsPage() {
           );
         })}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-thunder-600" />
+            AI assistant
+          </CardTitle>
+          <CardDescription>
+            Bring your own OpenAI key to power AI writing actions in the editor.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AiKeySettings />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

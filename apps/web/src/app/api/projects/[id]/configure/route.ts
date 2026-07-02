@@ -13,6 +13,7 @@ const configureSchema = z.object({
   codeRoot: z.string().optional(),
   configPaths: z.array(z.string()).optional(),
   commitMessageMode: z.enum(["auto", "custom"]).default("auto"),
+  previewUrl: z.string().optional(),
 });
 
 export async function POST(
@@ -98,6 +99,7 @@ export async function POST(
           ? JSON.stringify(parsed.data.configPaths)
           : null,
         commitMessageMode: parsed.data.commitMessageMode,
+        previewUrl: parsed.data.previewUrl || null,
       },
     });
 

@@ -107,6 +107,8 @@ model Project {
   gitRepoName     String?
   gitRepoFullName String?
   defaultBranch   String   @default("main")
+  targetBranch    String?
+  previewUrl      String?
   framework       String?
   isConfigured    Boolean  @default(false)
   contentRoots    String?

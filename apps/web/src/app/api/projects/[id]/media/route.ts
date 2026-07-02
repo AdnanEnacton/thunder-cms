@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { commitBinaryFile, deleteFile, getRepoTree } from "@/lib/github";
 import { getMediaFolders, listMediaFiles, toPublicPath } from "@/lib/media/scan";
-import { getProjectForUser } from "@/lib/project-auth";
+import { getProjectForUser, getProjectBranch } from "@/lib/project-auth";
 import { prisma } from "@thunder/database";
 
 export async function GET(
@@ -30,7 +30,7 @@ export async function GET(
       token,
       project.gitRepoOwner!,
       project.gitRepoName!,
-      project.defaultBranch,
+      getProjectBranch(project),
     );
 
     return NextResponse.json({
@@ -82,7 +82,7 @@ export async function POST(
       token,
       project.gitRepoOwner!,
       project.gitRepoName!,
-      project.defaultBranch,
+      getProjectBranch(project),
       path,
       buffer,
       `Upload: "${safeName}"`,
@@ -137,7 +137,7 @@ export async function DELETE(
       token,
       project.gitRepoOwner!,
       project.gitRepoName!,
-      project.defaultBranch,
+      getProjectBranch(project),
       path,
       `Delete media: "${name}"`,
     );

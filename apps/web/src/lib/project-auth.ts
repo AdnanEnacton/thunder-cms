@@ -6,6 +6,10 @@ import { prisma } from "@thunder/database";
 
 export { getGithubTokenForUser } from "@/lib/github-token";
 
+export function getProjectBranch(project: Project): string {
+  return project.targetBranch ?? project.defaultBranch;
+}
+
 type ProjectAuthError = {
   error: "Unauthorized" | "Not found" | "GitHub not connected";
 };
@@ -20,6 +24,7 @@ type ProjectGitSuccess = {
   session: Session;
   project: Project;
   token: string;
+  membership: Membership;
 };
 
 export async function getSessionUser() {
@@ -57,7 +62,7 @@ export async function getProjectForUser(
   const memberResult = await requireProjectMember(projectId);
   if ("error" in memberResult) return memberResult;
 
-  const { session, project } = memberResult;
+  const { session, project, membership } = memberResult;
 
   if (!project.gitRepoOwner || !project.gitRepoName) {
     return { error: "Not found" };
@@ -68,5 +73,5 @@ export async function getProjectForUser(
     return { error: "GitHub not connected" };
   }
 
-  return { session, project, token };
+  return { session, project, token, membership };
 }

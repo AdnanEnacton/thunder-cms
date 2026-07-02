@@ -18,27 +18,27 @@ interface ItemListProps {
 const ROW_VARIANTS = [
   {
     bar: "bg-thunder-500",
-    bg: "bg-thunder-50/80 hover:bg-thunder-50",
-    badge: "bg-thunder-100 text-thunder-700",
-    active: "ring-thunder-200",
+    bg: "bg-thunder-50/80 hover:bg-thunder-50 dark:bg-thunder-500/10 dark:hover:bg-thunder-500/15",
+    badge: "bg-thunder-100 text-thunder-700 dark:bg-thunder-500/15 dark:text-thunder-300",
+    active: "ring-thunder-200 dark:ring-thunder-500/30",
   },
   {
     bar: "bg-violet-500",
-    bg: "bg-violet-50/80 hover:bg-violet-50",
-    badge: "bg-violet-100 text-violet-700",
-    active: "ring-violet-200",
+    bg: "bg-violet-50/80 hover:bg-violet-50 dark:bg-violet-500/10 dark:hover:bg-violet-500/15",
+    badge: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+    active: "ring-violet-200 dark:ring-violet-500/30",
   },
   {
     bar: "bg-emerald-500",
-    bg: "bg-emerald-50/80 hover:bg-emerald-50",
-    badge: "bg-emerald-100 text-emerald-700",
-    active: "ring-emerald-200",
+    bg: "bg-emerald-50/80 hover:bg-emerald-50 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/15",
+    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    active: "ring-emerald-200 dark:ring-emerald-500/30",
   },
   {
     bar: "bg-amber-500",
-    bg: "bg-amber-50/80 hover:bg-amber-50",
-    badge: "bg-amber-100 text-amber-700",
-    active: "ring-amber-200",
+    bg: "bg-amber-50/80 hover:bg-amber-50 dark:bg-amber-500/10 dark:hover:bg-amber-500/15",
+    badge: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+    active: "ring-amber-200 dark:ring-amber-500/30",
   },
 ] as const;
 

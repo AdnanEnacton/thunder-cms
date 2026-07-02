@@ -7,7 +7,7 @@ import {
 } from "@/lib/content/scan";
 import { inferFieldsFromEntries } from "@/lib/content/schema";
 import { parseContentFile } from "@/lib/content/parser";
-import { getProjectForUser } from "@/lib/project-auth";
+import { getProjectForUser, getProjectBranch } from "@/lib/project-auth";
 import { prisma } from "@thunder/database";
 
 export async function GET(
@@ -27,6 +27,7 @@ export async function GET(
   const folderPath = searchParams.get("folderPath") ?? searchParams.get("folder");
 
   const { project, token } = result;
+  const branch = getProjectBranch(project);
   const roots = getContentRoots(project.contentRoots);
   const root = roots.find((r) => r.id === rootId) ?? roots[0];
 
@@ -39,7 +40,7 @@ export async function GET(
       token,
       project.gitRepoOwner!,
       project.gitRepoName!,
-      project.defaultBranch,
+      branch,
     );
 
     const paths = listEntriesInCollection(root, tree, folderPath ?? undefined).slice(0, 100);
@@ -60,7 +61,7 @@ export async function GET(
               project.gitRepoOwner!,
               project.gitRepoName!,
               path,
-              project.defaultBranch,
+              branch,
             );
             return {
               summary: summarizeEntry(path, content, collectionId),
@@ -138,7 +139,7 @@ export async function POST(
       token,
       project.gitRepoOwner!,
       project.gitRepoName!,
-      project.defaultBranch,
+      getProjectBranch(project),
       path,
       content,
       message,

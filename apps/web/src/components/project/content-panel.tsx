@@ -1,10 +1,12 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { FileText, Plus, Search } from "lucide-react";
 import type { ContentEntrySummary, FieldSchema } from "@thunder/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EntryListSkeleton } from "@/components/ui/loading-state";
+import { cn } from "@/lib/utils";
 
 interface Collection {
   id: string;
@@ -44,7 +46,39 @@ export function ContentPanel({
   onCreate,
   onSelectEntry,
 }: ContentPanelProps) {
-  return (
+  const [sortBy, setSortBy] = useState<"updated" | "title" | "date-desc" | "date-asc">("updated");
+  const [draftFilter, setDraftFilter] = useState<"all" | "draft" | "published">("all");
+  const [query, setQuery] = useState("");
+
+  const visibleEntries = useMemo(() => {
+    let result = entries;
+
+    if (draftFilter === "draft") {
+      result = result.filter((e) => e.draft);
+    } else if (draftFilter === "published") {
+      result = result.filter((e) => !e.draft);
+    }
+
+    const q = query.trim().toLowerCase();
+    if (q) {
+      result = result.filter(
+        (e) => e.title.toLowerCase().includes(q) || e.path.toLowerCase().includes(q),
+      );
+    }
+
+    const sorted = [...result];
+    if (sortBy === "title") {
+      sorted.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortBy === "date-desc") {
+      sorted.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+    } else if (sortBy === "date-asc") {
+      sorted.sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+    }
+
+    return sorted;
+  }, [entries, draftFilter, query, sortBy]);
+
+  const draftCount = entries.filter((e) => e.draft).length;  return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <div className="flex items-center justify-between border-b border-border bg-surface-raised px-6 py-4">
         <div>
@@ -117,38 +151,92 @@ export function ContentPanel({
           </div>
         ) : (
           <div className="p-4">
-            <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 py-2 shadow-xs">
-              <Search className="h-4 w-4 text-muted" />
-              <span className="text-sm text-muted">
-                {entries.length} {entries.length === 1 ? "entry" : "entries"} in this collection
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-raised px-3 py-2 shadow-xs">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search entries..."
+                  className="w-full bg-transparent pl-6 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+
+              <div className="flex items-center gap-0.5 rounded-lg bg-surface-subtle p-0.5">
+                {([
+                  { id: "all" as const, label: "All" },
+                  { id: "draft" as const, label: "Drafts" },
+                  { id: "published" as const, label: "Published" },
+                ]).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setDraftFilter(id)}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                      draftFilter === id
+                        ? "bg-surface-raised text-foreground shadow-xs"
+                        : "text-muted hover:text-foreground",
+                    )}
+                  >
+                    {label}
+                    {id === "draft" && draftCount > 0 && (
+                      <span className="ml-1 text-muted-foreground">{draftCount}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="rounded-lg border border-border bg-surface-subtle px-2.5 py-1.5 text-xs font-medium text-foreground outline-none transition-colors hover:bg-surface-overlay focus:border-thunder-400"
+              >
+                <option value="updated">Last updated</option>
+                <option value="title">Title A-Z</option>
+                <option value="date-desc">Newest date</option>
+                <option value="date-asc">Oldest date</option>
+              </select>
+
+              <span className="ml-auto text-xs text-muted">
+                {visibleEntries.length}{visibleEntries.length !== entries.length && ` / ${entries.length}`}
               </span>
             </div>
-            <div className="space-y-1">
-              {entries.map((entry) => (
-                <button
-                  key={entry.path}
-                  type="button"
-                  onClick={() => onSelectEntry(entry.path)}
-                  className="group flex w-full items-center justify-between rounded-xl border border-transparent px-4 py-3.5 text-left transition-all hover:border-border hover:bg-surface-raised hover:shadow-xs"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-overlay transition-colors group-hover:bg-thunder-50">
-                      <FileText className="h-4 w-4 text-muted group-hover:text-thunder-600" />
+
+            {visibleEntries.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+                <p className="font-medium">No matching entries</p>
+                <p className="text-sm text-muted">Try a different filter or search term.</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {visibleEntries.map((entry) => (
+                  <button
+                    key={entry.path}
+                    type="button"
+                    onClick={() => onSelectEntry(entry.path)}
+                    className="group flex w-full items-center justify-between rounded-xl border border-transparent px-4 py-3.5 text-left transition-all hover:border-border hover:bg-surface-raised hover:shadow-xs"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-overlay transition-colors group-hover:bg-thunder-50">
+                        <FileText className="h-4 w-4 text-muted group-hover:text-thunder-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium tracking-tight">{entry.title}</p>
+                        <p className="truncate font-mono text-xs text-muted">{entry.path}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-medium tracking-tight">{entry.title}</p>
-                      <p className="truncate font-mono text-xs text-muted">{entry.path}</p>
+                    <div className="flex shrink-0 items-center gap-3 text-sm text-muted">
+                      {entry.date && (
+                        <span className="hidden sm:inline text-xs">{entry.date.slice(0, 10)}</span>
+                      )}
+                      {entry.draft && <span className="badge badge-warning">Draft</span>}
                     </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3 text-sm text-muted">
-                    {entry.date && (
-                      <span className="hidden sm:inline text-xs">{entry.date.slice(0, 10)}</span>
-                    )}
-                    {entry.draft && <span className="badge badge-warning">Draft</span>}
-                  </div>
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

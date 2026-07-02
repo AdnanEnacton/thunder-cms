@@ -226,3 +226,95 @@ export async function commitBinaryFile(
 
   return data.commit.sha ?? "";
 }
+
+export interface BranchSummary {
+  name: string;
+  isDefault: boolean;
+}
+
+export async function listBranches(
+  accessToken: string,
+  owner: string,
+  repo: string,
+): Promise<BranchSummary[]> {
+  const octokit = createOctokit(accessToken);
+  const branches = await octokit.paginate(octokit.rest.repos.listBranches, {
+    owner,
+    repo,
+    per_page: 100,
+  });
+
+  return branches.map((b) => ({ name: b.name, isDefault: false }));
+}
+
+export async function createBranch(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  branchName: string,
+  fromBranch: string,
+): Promise<string> {
+  const octokit = createOctokit(accessToken);
+  const { data: refData } = await octokit.rest.git.getRef({
+    owner,
+    repo,
+    ref: `heads/${fromBranch}`,
+  });
+  const { data } = await octokit.rest.git.createRef({
+    owner,
+    repo,
+    ref: `refs/heads/${branchName}`,
+    sha: refData.object.sha,
+  });
+  return data.ref;
+}
+
+export interface CommitSummary {
+  sha: string;
+  message: string;
+  author: string;
+  date: string;
+}
+
+export async function listCommitsForFile(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  path: string,
+  perPage = 30,
+): Promise<CommitSummary[]> {
+  const octokit = createOctokit(accessToken);
+  const { data } = await octokit.rest.repos.listCommits({
+    owner,
+    repo,
+    sha: branch,
+    path,
+    per_page: perPage,
+  });
+
+  return data.map((c) => ({
+    sha: c.sha,
+    message: c.commit.message,
+    author: c.commit.author?.name ?? c.commit.committer?.name ?? "Unknown",
+    date: c.commit.author?.date ?? c.commit.committer?.date ?? "",
+  }));
+}
+
+export async function getFileAtRef(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  path: string,
+  ref: string,
+): Promise<{ content: string; sha: string }> {
+  const octokit = createOctokit(accessToken);
+  const { data } = await octokit.rest.repos.getContent({ owner, repo, path, ref });
+
+  if (Array.isArray(data) || data.type !== "file" || !("content" in data)) {
+    throw new Error("File not found at ref");
+  }
+
+  const content = Buffer.from(data.content, "base64").toString("utf8");
+  return { content, sha: data.sha };
+}

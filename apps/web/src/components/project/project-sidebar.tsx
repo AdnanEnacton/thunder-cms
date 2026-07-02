@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { BranchSelector } from "@/components/project/branch-selector";
 import type { ContentEntrySummary } from "@thunder/types";
 
 export type ProjectView = "content" | "media" | "config";
@@ -178,10 +180,11 @@ export function ProjectSidebar({
 
   return (
     <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-border bg-surface-raised">
-      <div className="flex h-14 items-center px-5">
+      <div className="flex h-14 items-center justify-between px-5">
         <Link href="/dashboard" className="transition-opacity hover:opacity-80">
           <Logo />
         </Link>
+        <ThemeToggle />
       </div>
 
       <div className="border-b border-border px-3 pb-3" ref={projectRef}>
@@ -244,6 +247,8 @@ export function ProjectSidebar({
         </div>
       </div>
 
+      <BranchSelector projectId={projectId} />
+
       <nav className="space-y-0.5 border-b border-border p-3">
         <Link href="/dashboard" className="nav-item">
           <LayoutDashboard className="h-4 w-4 shrink-0 text-muted" />
@@ -278,6 +283,16 @@ export function ProjectSidebar({
         >
           <Activity className="h-4 w-4 shrink-0 text-muted" />
           Activity
+        </Link>
+        <Link
+          href={`/dashboard/projects/${projectId}/settings`}
+          className={cn(
+            "nav-item",
+            activePath === `/dashboard/projects/${projectId}/settings` && "nav-item-active",
+          )}
+        >
+          <Settings className="h-4 w-4 shrink-0 text-muted" />
+          Project settings
         </Link>
       </nav>
 

@@ -1,6 +1,6 @@
 import { getFileBinary } from "@/lib/github";
 import { fromPublicPath } from "@/lib/media/scan";
-import { getProjectForUser } from "@/lib/project-auth";
+import { getProjectForUser, getProjectBranch } from "@/lib/project-auth";
 
 export async function GET(
   request: Request,
@@ -35,7 +35,7 @@ export async function GET(
         project.gitRepoOwner!,
         project.gitRepoName!,
         repoPath,
-        project.defaultBranch,
+        getProjectBranch(project),
       );
       content = res.content;
     } catch (err) {
@@ -45,7 +45,7 @@ export async function GET(
           project.gitRepoOwner!,
           project.gitRepoName!,
           path,
-          project.defaultBranch,
+          getProjectBranch(project),
         );
         content = res.content;
       } else {

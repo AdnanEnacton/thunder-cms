@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  History,
+  Save,
+  Sparkles,
+  Trash2,
+  ExternalLink,
+} from "lucide-react";
 import type { ContentDocument, FieldSchema } from "@thunder/types";
 import { BodyEditor } from "@/components/content/body-editor";
 import { FieldInput } from "@/components/content/field-input";
@@ -12,11 +21,20 @@ import { inferFieldSchema } from "@/lib/content/schema";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { LoadingState } from "@/components/ui/loading-state";
+import { CommitMessageDialog } from "@/components/content/commit-message-dialog";
+import { VersionHistory } from "@/components/content/version-history";
+import { AiAssistant } from "@/components/content/ai-assistant";
+import { cn } from "@/lib/utils";
 
 interface EntryEditorProps {
   projectId: string;
   filePath: string;
   onBack?: () => void;
+}
+
+interface ProjectSettings {
+  commitMessageMode: "auto" | "custom";
+  previewUrl: string | null;
 }
 
 export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
@@ -33,19 +51,27 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
   const [bodyMode, setBodyMode] = useState<"visual" | "markdown">("visual");
   const [expandedSectionIndex, setExpandedSectionIndex] = useState<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [settings, setSettings] = useState<ProjectSettings>({ commitMessageMode: "auto", previewUrl: null });
+  const [showCommitDialog, setShowCommitDialog] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showAi, setShowAi] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       setError("");
       setExpandedSectionIndex(null);
-      const response = await fetch(
-        `/api/projects/${projectId}/content/entry?path=${encodeURIComponent(filePath)}`,
-      );
-      const data = await response.json();
+      const [entryRes, settingsRes] = await Promise.all([
+        fetch(`/api/projects/${projectId}/content/entry?path=${encodeURIComponent(filePath)}`),
+        fetch(`/api/projects/${projectId}`),
+      ]);
+
+      const data = await entryRes.json();
       setLoading(false);
 
-      if (!response.ok) {
+      if (!entryRes.ok) {
         setError(data.error ?? "Failed to load entry");
         return;
       }
@@ -55,6 +81,14 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
       setFrontmatter(data.frontmatter ?? {});
       setBody(data.body ?? "");
       setFields(data.fields ?? []);
+
+      if (settingsRes.ok) {
+        const s = await settingsRes.json();
+        setSettings({
+          commitMessageMode: s.project?.commitMessageMode ?? "auto",
+          previewUrl: s.project?.previewUrl ?? null,
+        });
+      }
     }
 
     load();
@@ -70,7 +104,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
     updateField("sections", sections);
   }
 
-  async function handleSave() {
+  async function performSave(message: string | null) {
     setSaving(true);
     setError("");
     setSuccess("");
@@ -78,7 +112,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
     const response = await fetch(`/api/projects/${projectId}/content/entry`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: filePath, sha, frontmatter, body, format }),
+      body: JSON.stringify({ path: filePath, sha, frontmatter, body, format, message }),
     });
 
     const data = await response.json();
@@ -91,7 +125,18 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
 
     if (data.sha) setSha(data.sha);
     setSuccess("Saved successfully");
+    setPendingMessage(null);
     router.refresh();
+  }
+
+  function handleSaveClick() {
+    const title = (frontmatter.title as string) || filePath.split("/").pop() || "entry";
+    if (settings.commitMessageMode === "custom") {
+      setPendingMessage(`Update: "${title}"`);
+      setShowCommitDialog(true);
+    } else {
+      performSave(null);
+    }
   }
 
   async function handleDelete() {
@@ -148,7 +193,39 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
             <p className="truncate font-mono text-[11px] text-muted">{filePath}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowHistory(true)}
+            className="text-muted hover:text-foreground"
+            title="Version history"
+          >
+            <History className="h-3.5 w-3.5" />
+            History
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAi(true)}
+            className="text-muted hover:text-thunder-600"
+            title="AI assistant"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            AI
+          </Button>
+          {settings.previewUrl && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+              className={cn("text-muted", showPreview ? "text-thunder-600" : "hover:text-foreground")}
+              title="Live preview"
+            >
+              {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              Preview
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -158,7 +235,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
             <Trash2 className="h-3.5 w-3.5" />
             Delete
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={saving}>
+          <Button size="sm" onClick={handleSaveClick} disabled={saving}>
             <Save className="h-3.5 w-3.5" />
             {saving ? "Saving..." : "Save"}
           </Button>
@@ -173,7 +250,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
             </p>
           )}
           {success && (
-            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-700">
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
               {success}
             </p>
           )}
@@ -233,14 +310,41 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           </div>
         </div>
 
-        <BodyEditor
-          key={filePath}
-          projectId={projectId}
-          value={body}
-          onChange={setBody}
-          mode={bodyMode}
-          onModeChange={setBodyMode}
-        />
+        <div className={cn("flex flex-1 flex-col overflow-hidden", showPreview && "hidden lg:flex")}>
+          <BodyEditor
+            key={filePath}
+            projectId={projectId}
+            value={body}
+            onChange={setBody}
+            mode={bodyMode}
+            onModeChange={setBodyMode}
+          />
+        </div>
+
+        {showPreview && settings.previewUrl && (
+          <div className="flex w-[40%] min-w-[320px] shrink-0 flex-col border-l border-border bg-surface-raised">
+            <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <Eye className="h-3.5 w-3.5 text-thunder-600" />
+                <span className="text-xs font-semibold">Live preview</span>
+              </div>
+              <a
+                href={settings.previewUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-muted hover:text-foreground"
+              >
+                Open <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+            <iframe
+              src={settings.previewUrl}
+              title="Live preview"
+              className="flex-1 border-0 bg-white"
+              sandbox="allow-same-origin allow-scripts allow-forms"
+            />
+          </div>
+        )}
       </div>
 
       <ConfirmDialog
@@ -254,6 +358,40 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           handleDelete();
         }}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      <CommitMessageDialog
+        open={showCommitDialog}
+        defaultTitle={(frontmatter.title as string) || filePath.split("/").pop() || "entry"}
+        saving={saving}
+        onClose={() => {
+          setShowCommitDialog(false);
+          setPendingMessage(null);
+        }}
+        onConfirm={(message) => performSave(message)}
+      />
+
+      <VersionHistory
+        open={showHistory}
+        projectId={projectId}
+        filePath={filePath}
+        onClose={() => setShowHistory(false)}
+        onRestored={() => {
+          setSuccess("Restored — reloading entry…");
+          setError("");
+          setTimeout(() => window.location.reload(), 800);
+        }}
+      />
+
+      <AiAssistant
+        open={showAi}
+        body={body}
+        onClose={() => setShowAi(false)}
+        onApply={(newBody) => {
+          setBody(newBody);
+          setSuccess("AI result applied. Remember to Save.");
+          setError("");
+        }}
       />
     </div>
   );

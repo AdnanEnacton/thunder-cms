@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRepoTree } from "@/lib/github";
 import { buildScannedCollections, getContentRoots } from "@/lib/content/scan";
-import { getProjectForUser } from "@/lib/project-auth";
+import { getProjectForUser, getProjectBranch } from "@/lib/project-auth";
 
 export async function GET(
   _request: Request,
@@ -16,6 +16,7 @@ export async function GET(
   }
 
   const { project, token } = result;
+  const branch = getProjectBranch(project);
   const roots = getContentRoots(project.contentRoots);
 
   try {
@@ -23,7 +24,7 @@ export async function GET(
       token,
       project.gitRepoOwner!,
       project.gitRepoName!,
-      project.defaultBranch,
+      branch,
     );
 
     const collections = roots.flatMap((root) => {
@@ -54,8 +55,9 @@ export async function GET(
       ];
     });
 
-    return NextResponse.json({ collections, roots });
-  } catch {
-    return NextResponse.json({ error: "Failed to scan content" }, { status: 500 });
+    return NextResponse.json({ collections, roots, scannedBranch: branch, treeFileCount: tree.filter((e) => e.type === "file").length });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Failed to scan content";
+    return NextResponse.json({ error: msg, scannedBranch: branch }, { status: 500 });
   }
 }

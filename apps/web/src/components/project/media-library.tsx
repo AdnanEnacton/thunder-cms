@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Copy, ImageIcon, Trash2, Upload } from "lucide-react";
+import { Copy, Grid2x2, ImageIcon, List, Trash2, Upload } from "lucide-react";
 import type { MediaFileSummary } from "@thunder/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ export function MediaLibrary({ projectId }: MediaLibraryProps) {
   const [files, setFiles] = useState<MediaFileSummary[]>([]);
   const [copiedPath, setCopiedPath] = useState("");
   const [deletePath, setDeletePath] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   async function loadMedia(selectedFolder = folder) {
     setLoading(true);
@@ -110,6 +111,36 @@ export function MediaLibrary({ projectId }: MediaLibraryProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 rounded-lg border border-border bg-surface-subtle p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+                viewMode === "grid"
+                  ? "bg-surface-raised text-foreground shadow-xs"
+                  : "text-muted hover:text-foreground",
+              )}
+              title="Grid view"
+              aria-label="Grid view"
+            >
+              <Grid2x2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-md transition-colors",
+                viewMode === "list"
+                  ? "bg-surface-raised text-foreground shadow-xs"
+                  : "text-muted hover:text-foreground",
+              )}
+              title="List view"
+              aria-label="List view"
+            >
+              <List className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <input
             ref={inputRef}
             type="file"
@@ -154,7 +185,7 @@ export function MediaLibrary({ projectId }: MediaLibraryProps) {
         </p>
       )}
       {success && (
-        <p className="border-b border-emerald-200 bg-emerald-50 px-6 py-2.5 text-sm text-emerald-700">
+        <p className="border-b border-emerald-200 bg-emerald-50 px-6 py-2.5 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
           {success}
         </p>
       )}
@@ -179,6 +210,58 @@ export function MediaLibrary({ projectId }: MediaLibraryProps) {
               <Upload className="h-4 w-4" />
               Upload first image
             </Button>
+          </div>
+        ) : viewMode === "list" ? (
+          <div className="overflow-hidden rounded-xl border border-border bg-surface-raised shadow-xs">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface-subtle text-left text-xs text-muted">
+                  <th className="px-4 py-2.5 font-medium">Name</th>
+                  <th className="px-4 py-2.5 font-medium">Path</th>
+                  <th className="w-[120px] px-4 py-2.5 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {files.map((file) => (
+                  <tr key={file.path} className="group transition-colors hover:bg-surface-overlay">
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={`/api/projects/${projectId}/media/raw?path=${encodeURIComponent(file.path)}`}
+                          alt={file.name}
+                          className="h-8 w-8 shrink-0 rounded-md border border-border object-cover"
+                        />
+                        <span className="truncate font-medium">{file.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <code className="truncate font-mono text-xs text-muted">{file.publicPath}</code>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-muted hover:text-foreground"
+                          onClick={() => copyPath(file.publicPath)}
+                        >
+                          <Copy className="h-3 w-3" />
+                          {copiedPath === file.publicPath ? "Copied" : ""}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-muted hover:text-destructive"
+                          onClick={() => setDeletePath(file.path)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

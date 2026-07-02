@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-thunder-50: #f0f5ff;
   --color-thunder-100: #e0ebff;
@@ -37,6 +39,29 @@
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
+}
+
+.dark {
+  --color-surface: #0b0b0d;
+  --color-surface-raised: #151517;
+  --color-surface-overlay: #1e1e22;
+  --color-surface-subtle: #0f0f12;
+  --color-border: #27272a;
+  --color-border-subtle: #1e1e22;
+  --color-muted: #9a9aa3;
+  --color-muted-foreground: #6b6b73;
+  --color-foreground: #f4f4f6;
+
+  --color-thunder-50: #16213a;
+  --color-thunder-100: #1b2744;
+  --color-thunder-200: #273656;
+  --color-thunder-700: #5c9aff;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
 * {
@@ -87,6 +112,10 @@ body {
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.dark .glass {
+  background: rgba(21, 21, 23, 0.72);
 }
 
 .surface-card {
@@ -155,10 +184,22 @@ body {
   border: 1px solid rgba(52, 199, 89, 0.2);
 }
 
+.dark .badge-success {
+  background: rgba(52, 199, 89, 0.12);
+  color: #4ade80;
+  border-color: rgba(52, 199, 89, 0.25);
+}
+
 .badge-warning {
   background: rgba(255, 159, 10, 0.1);
   color: #c93400;
   border: 1px solid rgba(255, 159, 10, 0.2);
+}
+
+.dark .badge-warning {
+  background: rgba(255, 159, 10, 0.12);
+  color: #fbbf24;
+  border-color: rgba(255, 159, 10, 0.25);
 }
 
 .badge-neutral {

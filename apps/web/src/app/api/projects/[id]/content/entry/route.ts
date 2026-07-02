@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { commitFile, deleteFile, getFileContent } from "@/lib/github";
+import { commitFile, deleteFile, getFileContent, listCommitsForFile, getFileAtRef } from "@/lib/github";
 import { parseContentFile, serializeContentFile } from "@/lib/content/parser";
 import { inferFieldsFromEntries } from "@/lib/content/schema";
-import { getProjectForUser } from "@/lib/project-auth";
+import { getProjectForUser, getProjectBranch } from "@/lib/project-auth";
 import { prisma } from "@thunder/database";
 
 export async function GET(
@@ -25,6 +25,7 @@ export async function GET(
   }
 
   const { project, token } = result;
+  const branch = getProjectBranch(project);
 
   try {
     const { content, sha } = await getFileContent(
@@ -32,7 +33,7 @@ export async function GET(
       project.gitRepoOwner!,
       project.gitRepoName!,
       path,
-      project.defaultBranch,
+      branch,
     );
 
     const parsed = parseContentFile(path, content);
@@ -64,15 +65,16 @@ export async function PUT(
   }
 
   const body = await request.json();
-  const { path, sha, frontmatter, body: entryBody, format = "md" } = body;
+  const { path, sha, frontmatter, body: entryBody, format = "md", message: customMessage } = body;
 
   if (!path || !sha) {
     return NextResponse.json({ error: "path and sha are required" }, { status: 400 });
   }
 
   const { project, token, session } = result;
+  const branch = getProjectBranch(project);
   const title = frontmatter?.title ?? frontmatter?.name ?? path.split("/").pop();
-  const message = `Update: "${title}"`;
+  const message = customMessage?.trim() || `Update: "${title}"`;
   const content = serializeContentFile(format, frontmatter ?? {}, entryBody ?? "");
 
   try {
@@ -80,7 +82,7 @@ export async function PUT(
       token,
       project.gitRepoOwner!,
       project.gitRepoName!,
-      project.defaultBranch,
+      branch,
       path,
       content,
       message,
@@ -92,7 +94,7 @@ export async function PUT(
       project.gitRepoOwner!,
       project.gitRepoName!,
       path,
-      project.defaultBranch,
+      branch,
     );
 
     await prisma.activityLog.create({
@@ -132,6 +134,7 @@ export async function DELETE(
   }
 
   const { project, token, session } = result;
+  const branch = getProjectBranch(project);
   const title = path.split("/").pop()?.replace(/\.[^.]+$/, "") ?? path;
   const message = `Delete: "${title}"`;
 
@@ -140,7 +143,7 @@ export async function DELETE(
       token,
       project.gitRepoOwner!,
       project.gitRepoName!,
-      project.defaultBranch,
+      branch,
       path,
       message,
     );
