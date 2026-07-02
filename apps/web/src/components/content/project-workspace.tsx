@@ -239,6 +239,7 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
     return (
       <div className="flex h-screen">
         <ProjectSidebar
+          projectId={projectId}
           projectName={projectName}
           view="content"
           collections={collections}
@@ -267,6 +268,7 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
   return (
     <div className="flex h-screen">
       <ProjectSidebar
+        projectId={projectId}
         projectName={projectName}
         view={view}
         collections={collections}

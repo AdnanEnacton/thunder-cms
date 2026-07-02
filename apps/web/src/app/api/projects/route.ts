@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { syncOrgGithubTokenForUser } from "@/lib/org-github";
 import { prisma } from "@thunder/database";
 import { z } from "zod";
 
@@ -58,6 +59,10 @@ export async function POST(request: Request) {
 
   if (!membership) {
     return NextResponse.json({ error: "No organization found" }, { status: 400 });
+  }
+
+  if (session.githubAccessToken) {
+    await syncOrgGithubTokenForUser(session.user.id, session.githubAccessToken);
   }
 
   const project = await prisma.project.create({

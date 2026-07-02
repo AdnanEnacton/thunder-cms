@@ -17,8 +17,9 @@ interface DashboardLayoutClientProps {
 export function DashboardLayoutClient({ children, user }: DashboardLayoutClientProps) {
   const pathname = usePathname();
 
-  const match = pathname.match(/^\/dashboard\/projects\/([^\/]+)$/);
-  const isProjectWorkspace = match && match[1] !== "new";
+  const match = pathname.match(/^\/dashboard\/projects\/([^\/]+)(\/.*)?$/);
+  const projectId = match?.[1];
+  const isProjectWorkspace = projectId && projectId !== "new";
 
   if (isProjectWorkspace) {
     return <>{children}</>;

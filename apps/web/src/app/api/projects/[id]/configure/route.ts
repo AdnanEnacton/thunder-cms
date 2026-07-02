@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { ThunderConfig } from "@thunder/types";
-import { auth } from "@/lib/auth";
 import { commitThunderConfig } from "@/lib/github";
+import { syncOrgGithubTokenForUser } from "@/lib/org-github";
+import { getProjectForUser } from "@/lib/project-auth";
 import { prisma } from "@thunder/database";
 import { z } from "zod";
 
@@ -14,27 +15,25 @@ const configureSchema = z.object({
   commitMessageMode: z.enum(["auto", "custom"]).default("auto"),
 });
 
-async function getGithubToken(userId: string, sessionToken?: string) {
-  if (sessionToken) return sessionToken;
-
-  const account = await prisma.account.findFirst({
-    where: { userId, provider: "github" },
-  });
-
-  return account?.access_token ?? null;
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
+  const { id } = await params;
+  const result = await getProjectForUser(id);
 
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if ("error" in result) {
+    const status =
+      result.error === "Unauthorized"
+        ? 401
+        : result.error === "GitHub not connected"
+          ? 403
+          : 404;
+    return NextResponse.json({ error: result.error }, { status });
   }
 
-  const { id } = await params;
+  const { session, project, token } = result;
+
   const body = await request.json();
   const parsed = configureSchema.safeParse(body);
 
@@ -42,16 +41,8 @@ export async function POST(
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  const project = await prisma.project.findUnique({ where: { id } });
-
-  if (!project || !project.gitRepoOwner || !project.gitRepoName) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
-  }
-
-  const token = await getGithubToken(session.user.id, session.githubAccessToken);
-
-  if (!token) {
-    return NextResponse.json({ error: "GitHub not connected" }, { status: 403 });
+  if (session.githubAccessToken) {
+    await syncOrgGithubTokenForUser(session.user.id, session.githubAccessToken);
   }
 
   const contentRoots = [
@@ -84,11 +75,13 @@ export async function POST(
     thunderConfig.configs = parsed.data.configPaths;
   }
 
+  const { gitRepoOwner, gitRepoName } = project;
+
   try {
     const commitSha = await commitThunderConfig(
       token,
-      project.gitRepoOwner,
-      project.gitRepoName,
+      gitRepoOwner!,
+      gitRepoName!,
       project.defaultBranch,
       thunderConfig,
     );

@@ -7,6 +7,7 @@
   "scripts": {
     "generate": "prisma generate",
     "push": "prisma db push",
+    "backfill:org-github": "node scripts/backfill-org-github.mjs",
     "studio": "prisma studio"
   },
   "dependencies": {

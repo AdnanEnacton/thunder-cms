@@ -18,6 +18,8 @@ import {
   Settings,
   Folder,
   FolderOpen,
+  Activity,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
@@ -51,6 +53,7 @@ interface User {
 }
 
 interface ProjectSidebarProps {
+  projectId: string;
   projectName: string;
   view: ProjectView;
   collections: SidebarCollection[];
@@ -70,6 +73,7 @@ interface ProjectSidebarProps {
 }
 
 export function ProjectSidebar({
+  projectId,
   projectName,
   view,
   collections,
@@ -255,6 +259,26 @@ export function ProjectSidebar({
           label="Media library"
           onClick={() => onViewChange("media")}
         />
+        <Link
+          href={`/dashboard/projects/${projectId}/team`}
+          className={cn(
+            "nav-item",
+            activePath === `/dashboard/projects/${projectId}/team` && "nav-item-active",
+          )}
+        >
+          <Users className="h-4 w-4 shrink-0 text-muted" />
+          Team
+        </Link>
+        <Link
+          href={`/dashboard/projects/${projectId}/activity`}
+          className={cn(
+            "nav-item",
+            activePath === `/dashboard/projects/${projectId}/activity` && "nav-item-active",
+          )}
+        >
+          <Activity className="h-4 w-4 shrink-0 text-muted" />
+          Activity
+        </Link>
       </nav>
 
       <div className="flex-1 space-y-5 overflow-auto p-3">

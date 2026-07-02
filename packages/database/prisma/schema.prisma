@@ -21,6 +21,7 @@ model User {
   memberships   Membership[]
   projects      Project[]    @relation("ProjectOwner")
   activityLogs  ActivityLog[]
+  invitationsSent Invitation[] @relation("InvitedBy")
 }
 
 model Session {
@@ -58,13 +59,17 @@ model Account {
 }
 
 model Organization {
-  id          String       @id @default(cuid())
-  name        String
-  slug        String       @unique
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  memberships Membership[]
-  projects    Project[]
+  id                  String       @id @default(cuid())
+  name                String
+  slug                String       @unique
+  githubAccessToken   String?
+  githubConnectedAt   DateTime?
+  githubConnectedById String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  memberships         Membership[]
+  projects            Project[]
+  invitations         Invitation[]
 }
 
 model Membership {
@@ -76,6 +81,22 @@ model Membership {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
+}
+
+model Invitation {
+  id             String   @id @default(cuid())
+  email          String
+  role           String   @default("editor")
+  token          String   @unique @default(cuid())
+  organizationId String
+  invitedById    String
+  accepted       Boolean  @default(false)
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy      User         @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@unique([email, organizationId])
 }
 
 model Project {

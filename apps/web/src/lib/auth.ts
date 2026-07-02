@@ -5,6 +5,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@thunder/database";
 import { authConfig } from "@/lib/auth.config";
+import { syncOrgGithubTokenForUser } from "@/lib/org-github";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -16,6 +17,11 @@ const credentialsSchema = z.object({
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
+  logger: {
+    error(error) {
+      console.error("[AUTH ERROR]", error.name, (error as any).cause ?? error.message);
+    },
+  },
   providers: [
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID ?? process.env.GITHUB_CLIENT_ID,
@@ -55,7 +61,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   events: {
     async signIn({ user, account }) {
-      if (account?.provider !== "github" || !user.id) return;
+      if (account?.provider !== "github" || !user.id || !account.access_token) return;
+
+      await syncOrgGithubTokenForUser(user.id, account.access_token);
 
       const existingMembership = await prisma.membership.findFirst({
         where: { userId: user.id },
@@ -71,6 +79,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           data: {
             name: orgName,
             slug: `${slugify(orgName)}-${user.id!.slice(-6)}`,
+            githubAccessToken: account.access_token,
+            githubConnectedAt: new Date(),
+            githubConnectedById: user.id!,
           },
         });
 
