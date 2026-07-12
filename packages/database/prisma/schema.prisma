@@ -117,6 +117,9 @@ model Project {
   codeRoot        String?
   configPaths     String?
   commitMessageMode String @default("auto")
+  blockRegistry   String?  // JSON: BlockDef[] — block definition overrides / manual blocks
+  pageTypes       String?  // JSON: PageTypeDef[] — page types for the New Page flow
+  componentsRoot  String?  // folder scanned for block components (default src/components)
   ownerId         String
   organizationId  String
   createdAt       DateTime @default(now())

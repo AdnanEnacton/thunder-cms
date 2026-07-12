@@ -1,9 +1,12 @@
 "use client";
 
+import type { BlockFieldDef } from "@thunder/types";
 import { ImageFieldInput } from "@/components/content/image-field-input";
 import { ItemList } from "@/components/content/item-list";
 import {
   collectTemplateOptions,
+  type ControlKind,
+  controlFromBlockFieldType,
   getArrayItemLabel,
   humanizeFieldKey,
   inferControlKind,
@@ -28,6 +31,16 @@ interface VisualValueEditorProps {
   templateOptions?: string[];
   variant?: EditorVariant;
   projectId?: string;
+  /** Force a specific control (from a BlockDef field) instead of inferring one. */
+  controlOverride?: ControlKind | null;
+  /** Options for a `select` control (from a BlockDef field). */
+  options?: string[];
+  /** Helper text shown under the control. */
+  help?: string;
+  /** Schema for this object's children (when value is an object/block). */
+  blockFields?: BlockFieldDef[];
+  /** Schema for each item (when value is an array with a defined item shape). */
+  itemFields?: BlockFieldDef[];
 }
 
 export function VisualValueEditor({
@@ -39,11 +52,19 @@ export function VisualValueEditor({
   templateOptions,
   variant = "default",
   projectId,
+  controlOverride,
+  options,
+  help,
+  blockFields,
+  itemFields,
 }: VisualValueEditorProps) {
-  const control = inferControlKind(fieldKey, value);
+  const control = controlOverride ?? inferControlKind(fieldKey, value);
   const id = `field-${fieldKey}-${depth}`;
 
-  if (value === null || value === undefined) {
+  // With no schema opinion, an absent value renders as an inert "Empty" chip.
+  // A schema-driven field (controlOverride set) instead renders an editable,
+  // zero-valued control so newly-defined fields can be filled in.
+  if ((value === null || value === undefined) && !controlOverride) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-surface-overlay/50 px-3 py-2 text-sm text-muted">
         {label ? `${label}: ` : ""}Empty
@@ -56,12 +77,13 @@ export function VisualValueEditor({
       <ObjectEditor
         label={label}
         fieldKey={fieldKey}
-        value={value as Record<string, unknown>}
+        value={(value ?? {}) as Record<string, unknown>}
         onChange={onChange}
         depth={depth}
         templateOptions={templateOptions}
         variant={variant}
         projectId={projectId}
+        blockFields={blockFields}
       />
     );
   }
@@ -71,11 +93,12 @@ export function VisualValueEditor({
       <ArrayEditor
         label={label}
         fieldKey={fieldKey}
-        value={value as unknown[]}
+        value={(value ?? []) as unknown[]}
         onChange={onChange}
         depth={depth}
         variant={variant}
         projectId={projectId}
+        itemFields={itemFields}
       />
     );
   }
@@ -100,12 +123,14 @@ export function VisualValueEditor({
   }
 
   if (control === "select") {
-    const options = (templateOptions?.length
-      ? templateOptions
-      : typeof value === "string"
-        ? [value]
-        : []
-    ).map((option) => ({
+    const source = options?.length
+      ? options
+      : templateOptions?.length
+        ? templateOptions
+        : typeof value === "string" && value
+          ? [value]
+          : [];
+    const selectOptions = source.map((option) => ({
       value: option,
       label: humanizeFieldKey(option),
     }));
@@ -119,8 +144,9 @@ export function VisualValueEditor({
           id={id}
           value={String(value ?? "")}
           onChange={onChange}
-          options={options}
+          options={selectOptions}
         />
+        {help && <FieldHelp text={help} />}
       </div>
     );
   }
@@ -187,6 +213,7 @@ export function VisualValueEditor({
               : "flex min-h-[140px] w-full resize-y rounded-[10px] border border-border bg-surface-raised px-3.5 py-2.5 text-sm leading-relaxed shadow-xs focus:border-thunder-500 focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
           }
         />
+        {help && <FieldHelp text={help} />}
       </div>
     );
   }
@@ -210,8 +237,13 @@ export function VisualValueEditor({
           }
         }}
       />
+      {help && <FieldHelp text={help} />}
     </div>
   );
+}
+
+function FieldHelp({ text }: { text: string }) {
+  return <p className="text-xs text-muted">{text}</p>;
 }
 
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -232,6 +264,7 @@ function ObjectEditor({
   templateOptions,
   variant,
   projectId,
+  blockFields,
 }: {
   label?: string;
   fieldKey: string;
@@ -241,30 +274,46 @@ function ObjectEditor({
   templateOptions?: string[];
   variant: EditorVariant;
   projectId?: string;
+  blockFields?: BlockFieldDef[];
 }) {
-  const keys = sortObjectKeys(Object.keys(value));
   const isNestedGroup = depth > 0;
   const groupLabel = label ?? humanizeFieldKey(fieldKey);
   const isFlat = variant === "flat";
   const fieldSpacing = isFlat ? "space-y-4" : "space-y-4";
 
+  // Schema-driven order: defined fields first (in their declared order), then any
+  // extra keys present on the value but not in the schema — rendered via inference.
+  const defByName = new Map((blockFields ?? []).map((f) => [f.name, f]));
+  const schemaKeys = (blockFields ?? []).map((f) => f.name);
+  const extraKeys = sortObjectKeys(Object.keys(value).filter((k) => !defByName.has(k)));
+  const orderedKeys = blockFields?.length ? [...schemaKeys, ...extraKeys] : sortObjectKeys(Object.keys(value));
+
   const fields = (
     <div className={fieldSpacing}>
-      {keys.map((key) => (
-        <VisualValueEditor
-          key={key}
-          fieldKey={key}
-          label={humanizeFieldKey(key)}
-          value={value[key]}
-          templateOptions={
-            key === "_template" || key === "template" ? templateOptions : undefined
-          }
-          onChange={(next) => onChange({ ...value, [key]: next })}
-          depth={depth + 1}
-          variant={variant}
-          projectId={projectId}
-        />
-      ))}
+      {orderedKeys.map((key) => {
+        const def = defByName.get(key);
+        const override = def ? controlFromBlockFieldType(def.type) : undefined;
+        return (
+          <VisualValueEditor
+            key={key}
+            fieldKey={key}
+            label={def?.label ?? humanizeFieldKey(key)}
+            value={value[key]}
+            templateOptions={
+              key === "_template" || key === "template" ? templateOptions : undefined
+            }
+            onChange={(next) => onChange({ ...value, [key]: next })}
+            depth={depth + 1}
+            variant={variant}
+            projectId={projectId}
+            controlOverride={override}
+            options={def?.options}
+            help={def?.help}
+            blockFields={def?.fields}
+            itemFields={def?.of?.fields}
+          />
+        );
+      })}
     </div>
   );
 
@@ -303,6 +352,7 @@ function ArrayEditor({
   depth,
   variant,
   projectId,
+  itemFields,
 }: {
   label?: string;
   fieldKey: string;
@@ -311,11 +361,15 @@ function ArrayEditor({
   depth: number;
   variant: EditorVariant;
   projectId?: string;
+  itemFields?: BlockFieldDef[];
 }) {
   const templateOptions = fieldKey === "sections" ? collectTemplateOptions(value) : undefined;
   const isSections = fieldKey === "sections";
   const isFlat = variant === "flat";
-  const useItemList = isFlat && !isSections && isListArrayField(fieldKey, value);
+  // A schema-defined item shape gets the structured per-item editor below, not
+  // the compact ItemList (which relies on key-name heuristics).
+  const useItemList =
+    isFlat && !isSections && !itemFields?.length && isListArrayField(fieldKey, value);
 
   if (useItemList) {
     return (
@@ -364,13 +418,27 @@ function ArrayEditor({
             depth={depth + 1}
             variant={variant}
             projectId={projectId}
+            blockFields={itemFields}
           />
         );
+
+        const removeItem = () => onChange(value.filter((_, i) => i !== index));
 
         if (isFlat) {
           return (
             <div key={`${fieldKey}-${index}`} className="space-y-3 border-t border-border pt-4 first:border-t-0 first:pt-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted">{itemLabel}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">{itemLabel}</p>
+                {itemFields?.length ? (
+                  <button
+                    type="button"
+                    onClick={removeItem}
+                    className="text-xs text-muted transition-colors hover:text-destructive"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
               {editor}
             </div>
           );
@@ -387,6 +455,30 @@ function ArrayEditor({
           </CollapsibleCard>
         );
       })}
+
+      {itemFields?.length ? (
+        <button
+          type="button"
+          onClick={() => onChange([...value, buildFromFields(itemFields)])}
+          className="w-full rounded-lg border border-dashed border-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:border-thunder-400 hover:text-thunder-600"
+        >
+          + Add {humanizeFieldKey(fieldKey).replace(/s$/, "") || "item"}
+        </button>
+      ) : null}
     </div>
   );
+}
+
+/** Seed an object from a list of field definitions (used when adding array items). */
+function buildFromFields(fields: BlockFieldDef[]): Record<string, unknown> {
+  const obj: Record<string, unknown> = {};
+  for (const f of fields) {
+    if (f.default !== undefined) obj[f.name] = f.default;
+    else if (f.type === "boolean") obj[f.name] = false;
+    else if (f.type === "number") obj[f.name] = 0;
+    else if (f.type === "tags" || f.type === "array") obj[f.name] = [];
+    else if (f.type === "object") obj[f.name] = f.fields ? buildFromFields(f.fields) : {};
+    else obj[f.name] = "";
+  }
+  return obj;
 }

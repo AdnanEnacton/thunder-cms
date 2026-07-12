@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FileText, Plus, Search } from "lucide-react";
-import type { ContentEntrySummary, FieldSchema } from "@thunder/types";
+import { Blocks, FileText, Plus, Search, Settings2 } from "lucide-react";
+import type { ContentEntrySummary, FieldSchema, PageTypeDef } from "@thunder/types";
+import { PageTypesDialog } from "@/components/content/page-builder/page-types-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EntryListSkeleton } from "@/components/ui/loading-state";
@@ -27,6 +28,14 @@ interface ContentPanelProps {
   showNew: boolean;
   newTitle: string;
   creating: boolean;
+  pageTypes: PageTypeDef[];
+  newPageType: string;
+  onNewPageTypeChange: (key: string) => void;
+  onPageTypesChanged: () => void;
+  totalEntries: number;
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
   onShowNew: (show: boolean) => void;
   onNewTitleChange: (value: string) => void;
   onCreate: () => void;
@@ -34,6 +43,7 @@ interface ContentPanelProps {
 }
 
 export function ContentPanel({
+  projectId,
   activeCollection,
   entries,
   entriesLoading,
@@ -41,6 +51,14 @@ export function ContentPanel({
   showNew,
   newTitle,
   creating,
+  pageTypes,
+  newPageType,
+  onNewPageTypeChange,
+  onPageTypesChanged,
+  totalEntries,
+  hasMore,
+  loadingMore,
+  onLoadMore,
   onShowNew,
   onNewTitleChange,
   onCreate,
@@ -49,6 +67,7 @@ export function ContentPanel({
   const [sortBy, setSortBy] = useState<"updated" | "title" | "date-desc" | "date-asc">("updated");
   const [draftFilter, setDraftFilter] = useState<"all" | "draft" | "published">("all");
   const [query, setQuery] = useState("");
+  const [managePageTypes, setManagePageTypes] = useState(false);
 
   const visibleEntries = useMemo(() => {
     let result = entries;
@@ -88,7 +107,8 @@ export function ContentPanel({
               : (activeCollection?.label ?? "Content")}
           </h2>
           <p className="mt-0.5 text-sm text-muted">
-            {entries.length} {entries.length === 1 ? "entry" : "entries"}
+            {totalEntries} {totalEntries === 1 ? "entry" : "entries"}
+            {hasMore && <span className="text-muted-foreground"> · {entries.length} loaded</span>}
             {activeCollection?.folderPath && (
               <span className="ml-1 font-mono text-xs text-muted-foreground">
                 · {activeCollection.folderPath}
@@ -110,22 +130,73 @@ export function ContentPanel({
 
       {showNew && (
         <div className="border-b border-border bg-surface-subtle px-6 py-4">
-          <div className="flex max-w-lg items-end gap-3">
-            <div className="flex-1 space-y-2">
-              <label className="text-sm font-medium tracking-tight">Title</label>
-              <Input
-                value={newTitle}
-                onChange={(e) => onNewTitleChange(e.target.value)}
-                placeholder="My new post"
-                autoFocus
-              />
+          <div className="max-w-2xl space-y-4">
+            {pageTypes.length > 1 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium tracking-tight">Page type</label>
+                  <button
+                    type="button"
+                    onClick={() => setManagePageTypes(true)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-muted transition-colors hover:text-thunder-600"
+                  >
+                    <Settings2 className="h-3.5 w-3.5" />
+                    Manage page types
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {pageTypes.map((pt) => {
+                    const active = pt.key === newPageType;
+                    const isComponent = pt.key === "component";
+                    return (
+                      <button
+                        key={pt.key}
+                        type="button"
+                        onClick={() => onNewPageTypeChange(pt.key)}
+                        className={cn(
+                          "flex flex-col gap-1 rounded-xl border px-3 py-2.5 text-left transition-all",
+                          active
+                            ? "border-thunder-300 bg-surface-raised shadow-sm ring-1 ring-thunder-500/20"
+                            : "border-border bg-surface-raised hover:border-thunder-200 hover:shadow-xs",
+                        )}
+                      >
+                        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                          {isComponent ? (
+                            <Blocks className="h-3.5 w-3.5 text-thunder-600" />
+                          ) : (
+                            <FileText className="h-3.5 w-3.5 text-muted" />
+                          )}
+                          {pt.label}
+                        </span>
+                        {pt.description && (
+                          <span className="line-clamp-2 text-[11px] leading-snug text-muted">
+                            {pt.description}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-end gap-3">
+              <div className="flex-1 space-y-2">
+                <label className="text-sm font-medium tracking-tight">Title</label>
+                <Input
+                  value={newTitle}
+                  onChange={(e) => onNewTitleChange(e.target.value)}
+                  placeholder="My new page"
+                  autoFocus
+                />
+              </div>
+              <Button onClick={onCreate} disabled={creating || !newTitle.trim()} size="sm">
+                {creating ? "Creating..." : "Create"}
+              </Button>
+              <Button variant="ghost" onClick={() => onShowNew(false)} size="sm">
+                Cancel
+              </Button>
             </div>
-            <Button onClick={onCreate} disabled={creating || !newTitle.trim()} size="sm">
-              {creating ? "Creating..." : "Create"}
-            </Button>
-            <Button variant="ghost" onClick={() => onShowNew(false)} size="sm">
-              Cancel
-            </Button>
           </div>
         </div>
       )}
@@ -237,9 +308,31 @@ export function ContentPanel({
                 ))}
               </div>
             )}
+
+            {hasMore && (
+              <div className="mt-3 flex flex-col items-center gap-1.5 border-t border-border pt-4">
+                {(query.trim() || draftFilter !== "all") && (
+                  <p className="text-xs text-muted-foreground">
+                    Search and filters apply to loaded entries only.
+                  </p>
+                )}
+                <Button variant="secondary" size="sm" onClick={onLoadMore} disabled={loadingMore}>
+                  {loadingMore
+                    ? "Loading…"
+                    : `Load more (${entries.length} of ${totalEntries})`}
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      <PageTypesDialog
+        open={managePageTypes}
+        projectId={projectId}
+        onClose={() => setManagePageTypes(false)}
+        onSaved={onPageTypesChanged}
+      />
     </div>
   );
 }

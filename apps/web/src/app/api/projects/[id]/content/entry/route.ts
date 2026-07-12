@@ -109,6 +109,16 @@ export async function PUT(
 
     return NextResponse.json({ path, sha: updated.sha, commitSha });
   } catch (error) {
+    // GitHub returns 409 when the blob SHA is stale (someone else committed
+    // to this file since we loaded it). Surface it distinctly so the client
+    // can offer a reload/overwrite choice instead of a bare error.
+    const status = (error as { status?: number })?.status;
+    if (status === 409) {
+      return NextResponse.json(
+        { error: "This entry was changed since you opened it.", conflict: true },
+        { status: 409 },
+      );
+    }
     const msg = error instanceof Error ? error.message : "Failed to save entry";
     return NextResponse.json({ error: msg }, { status: 500 });
   }

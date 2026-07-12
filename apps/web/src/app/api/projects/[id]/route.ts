@@ -25,6 +25,8 @@ export async function GET(
       defaultBranch: project.defaultBranch,
       previewUrl: project.previewUrl,
       commitMessageMode: project.commitMessageMode,
+      componentsRoot: project.componentsRoot,
+      framework: project.framework,
     },
     role: membership.role,
   });
@@ -34,6 +36,7 @@ const patchSchema = z.object({
   targetBranch: z.string().nullable().optional(),
   previewUrl: z.string().nullable().optional(),
   commitMessageMode: z.enum(["auto", "custom"]).optional(),
+  componentsRoot: z.string().nullable().optional(),
 });
 
 export async function PATCH(
@@ -69,6 +72,10 @@ export async function PATCH(
   if (parsed.data.commitMessageMode !== undefined) {
     data.commitMessageMode = parsed.data.commitMessageMode;
   }
+  if (parsed.data.componentsRoot !== undefined) {
+    data.componentsRoot =
+      parsed.data.componentsRoot === "" ? null : parsed.data.componentsRoot?.replace(/\/+$/, "");
+  }
 
   const updated = await prisma.project.update({ where: { id }, data });
 
@@ -79,6 +86,7 @@ export async function PATCH(
       previewUrl: updated.previewUrl,
       commitMessageMode: updated.commitMessageMode,
       defaultBranch: updated.defaultBranch,
+      componentsRoot: updated.componentsRoot,
     },
   });
 }

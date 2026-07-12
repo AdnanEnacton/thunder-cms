@@ -26,6 +26,14 @@ export async function GET(
   const rootId = searchParams.get("rootId");
   const folderPath = searchParams.get("folderPath") ?? searchParams.get("folder");
 
+  const DEFAULT_LIMIT = 30;
+  const MAX_LIMIT = 100;
+  const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
+  const limit = Math.min(
+    MAX_LIMIT,
+    Math.max(1, Number(searchParams.get("limit")) || DEFAULT_LIMIT),
+  );
+
   const { project, token } = result;
   const branch = getProjectBranch(project);
   const roots = getContentRoots(project.contentRoots);
@@ -43,7 +51,9 @@ export async function GET(
       branch,
     );
 
-    const paths = listEntriesInCollection(root, tree, folderPath ?? undefined).slice(0, 100);
+    const allPaths = listEntriesInCollection(root, tree, folderPath ?? undefined);
+    const total = allPaths.length;
+    const paths = allPaths.slice(offset, offset + limit);
     const collectionId = folderPath
       ? `${root.id}--${folderPath.replace(/\//g, "--")}`
       : root.id;
@@ -82,7 +92,16 @@ export async function GET(
 
     const fields = inferFieldsFromEntries(frontmatters);
 
-    return NextResponse.json({ entries, fields, root, folderPath });
+    return NextResponse.json({
+      entries,
+      fields,
+      root,
+      folderPath,
+      total,
+      offset,
+      limit,
+      hasMore: offset + limit < total,
+    });
   } catch {
     return NextResponse.json({ error: "Failed to load entries" }, { status: 500 });
   }

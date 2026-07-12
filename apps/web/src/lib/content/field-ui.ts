@@ -1,3 +1,5 @@
+import type { BlockFieldType } from "@thunder/types";
+
 export type ControlKind =
   | "toggle"
   | "text"
@@ -9,6 +11,44 @@ export type ControlKind =
   | "tags"
   | "object"
   | "array";
+
+/**
+ * Map a defined BlockFieldType to a concrete editor control. Returns `null` for
+ * types that carry no strong opinion (json/unknown) so the caller falls back to
+ * value-based inference — this is the "prefer BlockDef, else infer" contract.
+ */
+export function controlFromBlockFieldType(type: BlockFieldType): ControlKind | null {
+  switch (type) {
+    case "string":
+      return "text";
+    case "text":
+    case "richtext":
+      return "textarea";
+    case "number":
+      return "number";
+    case "boolean":
+      return "toggle";
+    case "tags":
+      return "tags";
+    case "image":
+      return "image";
+    case "url":
+      return "url";
+    case "select":
+      return "select";
+    case "object":
+      return "object";
+    case "array":
+      return "array";
+    case "color":
+    case "date":
+      return "text";
+    case "json":
+    case "unknown":
+    default:
+      return null;
+  }
+}
 
 export function isImageFieldKey(key: string): boolean {
   const k = key.toLowerCase();

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@thunder/database";
 import { requireProjectMember } from "@/lib/project-auth";
 import { requireRole } from "@/lib/rbac";
+import { sendInviteEmail, isEmailConfigured } from "@/lib/email";
 import { z } from "zod";
 
 // GET /api/projects/[id]/team — list members + pending invitations
@@ -116,8 +117,30 @@ export async function POST(
     },
   });
 
-  // In production you'd send an email here. For now return the invite link.
   const inviteUrl = `${process.env.AUTH_URL}/invite/${invitation.token}`;
 
-  return NextResponse.json({ invitation, inviteUrl });
+  // Send the invite email if SMTP is configured; otherwise fall back to the
+  // copy-link flow (the client shows the link when emailSent is false).
+  let emailSent = false;
+  if (isEmailConfigured()) {
+    try {
+      const organization = await prisma.organization.findUnique({
+        where: { id: project.organizationId },
+        select: { name: true },
+      });
+      emailSent = await sendInviteEmail({
+        to: email,
+        inviteUrl,
+        role,
+        inviterName: session.user.name ?? session.user.email ?? "A teammate",
+        orgName: organization?.name ?? "your team",
+      });
+    } catch (error) {
+      console.error("Failed to send invite email:", error);
+      // Non-fatal: the invitation still exists; surface the copy-link fallback.
+      emailSent = false;
+    }
+  }
+
+  return NextResponse.json({ invitation, inviteUrl, emailSent });
 }

@@ -11,7 +11,7 @@ interface ProjectSettingsClientProps {
 
 export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps) {
   const [commitMode, setCommitMode] = useState<"auto" | "custom">("auto");
-  const [previewUrl, setPreviewUrl] = useState("");
+  const [componentsRoot, setComponentsRoot] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -23,7 +23,7 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
       .then((d) => {
         if (d.project) {
           setCommitMode(d.project.commitMessageMode ?? "auto");
-          setPreviewUrl(d.project.previewUrl ?? "");
+          setComponentsRoot(d.project.componentsRoot ?? "");
         }
       })
       .finally(() => setLoading(false));
@@ -39,7 +39,7 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           commitMessageMode: commitMode,
-          previewUrl: previewUrl || null,
+          componentsRoot: componentsRoot.trim() || null,
         }),
       });
       if (!res.ok) {
@@ -80,13 +80,17 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Preview URL</label>
+        <label className="text-sm font-medium">Components folder</label>
         <Input
-          value={previewUrl}
-          onChange={(e) => setPreviewUrl(e.target.value)}
-          placeholder="https://your-staging-site.vercel.app"
+          value={componentsRoot}
+          onChange={(e) => setComponentsRoot(e.target.value)}
+          placeholder="src/components"
+          className="font-mono text-sm"
         />
-        <p className="text-xs text-muted">Shown in the editor's live preview pane (Eyeball icon).</p>
+        <p className="text-xs text-muted">
+          Every component in this folder becomes an available block in the page builder. Leave blank
+          to use the framework default (<span className="font-mono">src/components</span>).
+        </p>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

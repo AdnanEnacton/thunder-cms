@@ -75,7 +75,11 @@ export function TeamClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to invite");
       setInvitations((prev) => [data.invitation, ...prev]);
-      setInviteSuccess(`Invitation sent to ${inviteEmail}. Share this link: ${data.inviteUrl}`);
+      setInviteSuccess(
+        data.emailSent
+          ? `Invitation emailed to ${inviteEmail}.`
+          : `Invitation created for ${inviteEmail}. Share this link: ${data.inviteUrl}`,
+      );
       setInviteEmail("");
     } catch (err) {
       setInviteError(err instanceof Error ? err.message : "Something went wrong");

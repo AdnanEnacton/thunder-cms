@@ -1,7 +1,9 @@
 "use client";
 
 import { ChevronDown, Pencil } from "lucide-react";
+import type { BlockDef } from "@thunder/types";
 import { getSectionDisplayName } from "@/lib/content/field-ui";
+import { findBlockDef } from "@/lib/blocks/registry";
 import { VisualValueEditor } from "@/components/content/visual-value-editor";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,17 @@ interface SectionAccordionProps {
   onSectionChange: (index: number, value: unknown) => void;
   templateOptions: string[];
   projectId?: string;
+  /** When provided, a section whose `_template` matches a BlockDef is edited
+   *  with that block's defined field schema instead of pure inference. */
+  blocks?: BlockDef[];
+}
+
+function sectionTemplate(section: unknown): string | undefined {
+  if (typeof section === "object" && section !== null && !Array.isArray(section)) {
+    const t = (section as Record<string, unknown>)._template;
+    return typeof t === "string" ? t : undefined;
+  }
+  return undefined;
 }
 
 export function SectionAccordion({
@@ -28,6 +41,7 @@ export function SectionAccordion({
   onSectionChange,
   templateOptions,
   projectId,
+  blocks,
 }: SectionAccordionProps) {
   if (!sections.length) return null;
 
@@ -86,6 +100,7 @@ export function SectionAccordion({
                     onChange={(value) => onSectionChange(index, value)}
                     variant="flat"
                     projectId={projectId}
+                    blockFields={findBlockDef(blocks ?? [], sectionTemplate(section))?.fields}
                   />
                 </div>
               )}

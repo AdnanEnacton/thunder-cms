@@ -13,11 +13,11 @@
 | 0 | Foundation | `[x]` Done | 100% |
 | 1 | Git connect & configure | `[x]` Done | 100% |
 | 2 | Content CRUD | `[x]` Done | 98% |
-| 3 | Media & team | `[~]` Partial | 92% |
+| 3 | Media & team | `[~]` Partial | 98% |
 | 4 | Pro features | `[x]` Done | 100% |
 | 5 | Polish & scale | `[ ]` Not started | 0% |
 
-Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is nearly complete (only SMTP [on hold] + conflict-UX remain). Phase 5 untouched. Phase 4 delivered: custom commit messages, branch targeting, PR creation, version history/rollback, live preview iframe, Cmd+K search, BYOK AI assistant.
+Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SMTP invites, conflict-resolution UX, and entry-list pagination all shipped (only presence/soft-lock, a Phase-5 item, remains). Phase 5 untouched. Phase 4 delivered: custom commit messages, branch targeting, version history/rollback, live preview iframe, Cmd+K search, BYOK AI assistant. (PR creation intentionally dropped — deployment is handled by GitHub Actions on the `editor` branch via `deploy.json` trigger bumps.)
 
 ---
 
@@ -79,7 +79,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is nearly complete (only SMTP 
 
 ### Phase 2 pending
 - [x] **P2-A** Add **sort controls** + **filter-by-draft** toggle to the entry list. — **Done.** Sort dropdown + draft-filter segmented control + search in `content-panel.tsx`.
-- [ ] **P2-B** Add **pagination** to `entries/route.ts` GET (currently fetches up to 100 in batches of 8; no UI pagination).
+- [x] **P2-B** Add **pagination** to `entries/route.ts` GET. — **Done.** Route accepts `offset`/`limit` (default 30, max 100) and returns `total`/`hasMore`; `content-panel.tsx` has a **Load more** button ("N of total") and notes that client-side search/filter apply to loaded entries only.
 - [ ] **P2-C** Decide TipTap-vs-custom-editor for the long term. Custom editor uses deprecated `document.execCommand`. Either keep & document, or migrate to TipTap later.
 - [ ] **P2-D** Remove dead "Legacy MDX (removed)" CSS block in `globals.css` (lines ~785–1011) once confirmed unused.
 
@@ -105,15 +105,15 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is nearly complete (only SMTP 
 | 3.14 | Activity log — write on mutations | `[x]` | `entry.created/updated/deleted`, `media.uploaded/deleted`, `project.configured` |
 | 3.15 | Activity log — API (cursor pagination) | `[x]` | `app/api/projects/[id]/activity/route.ts` |
 | 3.16 | Activity log — UI (timeline) | `[x]` | `app/dashboard/projects/[id]/activity/page.tsx`. Label-key mismatch fixed (`entry.*` keys now match the API). |
-| 3.17 | Concurrent edit lock (SHA-based) | `[~]` | `entry/route.ts` PUT requires `sha`; GitHub returns 409 on stale blob. **Works**, but no soft lock, no presence, no merge UI — just a failure toast. |
-| 3.18 | Actual email sending for invites | `[ ]` | `team/route.ts` returns raw invite URL; `team-client.tsx` shows it in a banner. **No SMTP integration.** |
+| 3.17 | Concurrent edit lock (SHA-based) | `[x]` | `entry/route.ts` PUT requires `sha`; GitHub returns 409 on stale blob → route now returns a distinct `409 {conflict:true}`. Editor shows `ConflictDialog` (Reload latest / Overwrite / Keep editing). Soft lock + presence still Phase 5. |
+| 3.18 | Actual email sending for invites | `[x]` | `lib/email.ts` (nodemailer, generic SMTP env vars) + `sendInviteEmail`. `team/route.ts` emails the invite when `SMTP_*` is configured and returns `emailSent`; otherwise the copy-link fallback remains. |
 
 ### Phase 3 pending
 - [x] **P3-A** **Fix activity-log label bug** — align `ACTION_META` keys in `activity/page.tsx` with the `entry.*` / `media.*` / `project.*` action strings written by the API. — **Done.**
 - [x] **P3-B** Add **list-view toggle** to media library (grid/list). — **Done.**
 - [x] **P3-C** Add **media picker** to frontmatter image fields (`image-field-input.tsx`). — **Done.**
-- [!] **P3-D** Add **SMTP/email sending** for invites (add `EMAIL_*` env vars, transport, HTML template). — **ON HOLD** (user deferred). Copy-link invite flow remains.
-- [ ] **P3-E** Improve **conflict UX** — on 409, offer "Reload latest / Discard / Overwrite" instead of bare toast. (Soft lock + presence are Phase 5.)
+- [x] **P3-D** Add **SMTP/email sending** for invites. — **Done.** `lib/email.ts` (nodemailer + `SMTP_*`/`EMAIL_FROM` env vars + HTML template). Sends on invite when configured; copy-link fallback when not.
+- [x] **P3-E** Improve **conflict UX** — on 409, offer "Reload latest / Overwrite / Keep editing". — **Done.** `ConflictDialog` in the editor; PUT returns a distinct 409; overwrite refetches the latest SHA and re-saves. (Soft lock + presence are Phase 5.)
 - [x] **P3-F** Update README to reflect reality. — **Done.** README now lists Phase 0-3 features accurately.
 
 ---
@@ -175,7 +175,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is nearly complete (only SMTP 
 ## Cross-cutting issues (not phase-bound)
 
 - [x] **X-1** **README is out of date.** — **Fixed.** README now lists Phase 0-3 features accurately (incl. dark mode, sort/filter, media picker, list-view toggle).
-- [ ] **X-2** `.env.example` has no `EMAIL_*` vars (blocked by P3-D).
+- [x] **X-2** `.env.example` has `SMTP_*` + `EMAIL_FROM` vars. — **Done** (with P3-D).
 - [ ] **X-3** No tests exist anywhere in the repo. Decide on a test strategy (Vitest?) before Phase 4.
 - [ ] **X-4** No CI/lint gate documented. `next lint` is interactive/broken (no ESLint config installed); `tsc --noEmit` and `next build` both pass clean. Needs an `.eslintrc` + `eslint-config-next` to make `pnpm lint` non-interactive.
 - [ ] **X-5** Token encryption layer missing (plan §8.2 said "encrypted OAuth tokens"). Relevant when moving to Postgres/multi-tenant.
@@ -190,6 +190,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is nearly complete (only SMTP 
 | 2026-07-02 | opencode | Quick-wins batch: P3-A activity-log label fix; P0-A dark mode (toggle + dark palette + no-flash script); P3-C media picker in frontmatter image fields; P3-B media library list-view toggle; P2-A entry-list sort + filter-by-draft + search; P3-F README rewrite. `tsc --noEmit` + `next build` pass. |
 | 2026-07-02 | opencode | P3-D (SMTP invites) marked ON HOLD per user. Starting Phase 4. |
 | 2026-07-02 | opencode | **Phase 4 complete.** P4-A custom commit messages; P4-B branch targeting (targetBranch column + getProjectBranch + BranchSelector); P4-C PR creation; P4-D version history/rollback; P4-E live preview iframe (previewUrl column); P4-F Cmd+K command palette + search API; P4-G BYOK OpenAI AI assistant. New routes: projects/[id] GET+PATCH, branches, pulls, search, entry/history, entry/restore. Schema: +targetBranch, +previewUrl. Dev server stopped to run migration. `tsc --noEmit` + `next build` pass. |
+| 2026-07-11 | claude | **P3-D + P3-E + P2-B done.** P3-D SMTP invites (`lib/email.ts` via nodemailer; `SMTP_*`/`EMAIL_FROM` in `.env.example`; `team/route.ts` sends + returns `emailSent`; copy-link fallback kept). P3-E conflict UX (PUT returns distinct `409 {conflict}`; `ConflictDialog` with Reload/Overwrite/Keep editing; overwrite refetches latest SHA). P2-B pagination (`entries/route.ts` `offset`/`limit`+`total`/`hasMore`; Load-more UI). `tsc --noEmit` + `next build` pass. PR creation & i18n remain out of scope per user (deploy handled by GitHub Actions on `editor`). |
 | 2026-07-02 | opencode | **Removed PR creation (P4-C) per user** — no Open PR button/modal; deleted `pulls/route.ts` + `createPullRequest`. Branch targeting kept. Also fixed staging-content bug: `entries/route.ts` was fetching file contents from `project.defaultBranch` (line 63) instead of the target branch — now uses `branch` consistently. Added diagnostics to `collections/route.ts` (returns `scannedBranch` + `treeFileCount` + real error message) to help diagnose "No collections found" on staging. |
 
 > **Append a row here every time this file is edited** (see `AGENTS.md`).

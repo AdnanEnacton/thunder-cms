@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FileText } from "lucide-react";
-import type { ContentEntrySummary, FieldSchema } from "@thunder/types";
+import type { ContentEntrySummary, FieldSchema, PageTypeDef } from "@thunder/types";
+import { COMPONENT_PAGE_TYPE } from "@/lib/blocks/registry";
 import { EntryEditor } from "@/components/content/entry-editor";
 import { ContentPanel } from "@/components/project/content-panel";
 import { ConfigPanel } from "@/components/project/config-panel";
@@ -52,8 +53,14 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
   const [fields, setFields] = useState<FieldSchema[]>([]);
   const [loading, setLoading] = useState(true);
   const [entriesLoading, setEntriesLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalEntries, setTotalEntries] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const ENTRIES_PAGE_SIZE = 30;
   const [showNew, setShowNew] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [pageTypes, setPageTypes] = useState<PageTypeDef[]>([]);
+  const [newPageType, setNewPageType] = useState<string>("markdown");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [configFiles, setConfigFiles] = useState<SidebarConfigFile[]>([]);
@@ -101,12 +108,27 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
     loadConfigs();
   }, [projectId]);
 
+  const reloadPageTypes = useCallback(async () => {
+    const response = await fetch(`/api/projects/${projectId}/blocks`);
+    if (!response.ok) return;
+    const data = await response.json();
+    setPageTypes(Array.isArray(data.pageTypes) ? data.pageTypes : []);
+  }, [projectId]);
+
+  useEffect(() => {
+    reloadPageTypes();
+  }, [reloadPageTypes]);
+
   useEffect(() => {
     if (view !== "content" || !activeCollection) return;
 
     async function loadEntries() {
       setEntriesLoading(true);
-      const params = new URLSearchParams({ rootId: activeCollection!.rootId });
+      const params = new URLSearchParams({
+        rootId: activeCollection!.rootId,
+        limit: String(ENTRIES_PAGE_SIZE),
+        offset: "0",
+      });
       if (activeCollection!.folderPath) params.set("folderPath", activeCollection!.folderPath);
 
       const response = await fetch(
@@ -118,6 +140,8 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
       if (response.ok) {
         setEntries(data.entries ?? []);
         setFields(data.fields ?? []);
+        setTotalEntries(data.total ?? (data.entries ?? []).length);
+        setHasMore(Boolean(data.hasMore));
         setError("");
       } else {
         setError(data.error ?? "Failed to load entries");
@@ -126,6 +150,37 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
 
     loadEntries();
   }, [projectId, activeCollection, view]);
+
+  async function loadMoreEntries() {
+    if (!activeCollection || loadingMore) return;
+    setLoadingMore(true);
+    const params = new URLSearchParams({
+      rootId: activeCollection.rootId,
+      limit: String(ENTRIES_PAGE_SIZE),
+      offset: String(entries.length),
+    });
+    if (activeCollection.folderPath) params.set("folderPath", activeCollection.folderPath);
+
+    const response = await fetch(
+      `/api/projects/${projectId}/content/entries?${params.toString()}`,
+    );
+    const data = await response.json();
+    setLoadingMore(false);
+
+    if (response.ok) {
+      setEntries((prev) => [...prev, ...(data.entries ?? [])]);
+      // Merge any newly-seen fields (later pages may surface extra frontmatter keys).
+      setFields((prev) => {
+        const seen = new Set(prev.map((f) => f.name));
+        const extra = ((data.fields ?? []) as FieldSchema[]).filter((f) => !seen.has(f.name));
+        return extra.length ? [...prev, ...extra] : prev;
+      });
+      setTotalEntries(data.total ?? totalEntries);
+      setHasMore(Boolean(data.hasMore));
+    } else {
+      setError(data.error ?? "Failed to load more entries");
+    }
+  }
 
   function buildParams(overrides: Record<string, string | null>) {
     const params = new URLSearchParams();
@@ -182,12 +237,28 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
     if (!activeCollection || !newTitle.trim()) return;
     setCreating(true);
 
+    const isComponentPage = newPageType === COMPONENT_PAGE_TYPE;
     const defaultFrontmatter: Record<string, unknown> = {};
+
     for (const field of fields) {
       if (field.name === "title") defaultFrontmatter.title = newTitle;
       else if (field.name === "draft") defaultFrontmatter.draft = true;
       else if (field.name === "date") {
         defaultFrontmatter.date = new Date().toISOString().slice(0, 10);
+      }
+    }
+
+    if (isComponentPage) {
+      // Component pages are discriminated by `type` and hold an ordered `blocks` list.
+      defaultFrontmatter.type = COMPONENT_PAGE_TYPE;
+      defaultFrontmatter.blocks = [];
+    }
+
+    // Seed any page-type-specific frontmatter fields (Phase 3 custom page types).
+    const selectedType = pageTypes.find((p) => p.key === newPageType);
+    for (const field of selectedType?.fields ?? []) {
+      if (defaultFrontmatter[field.name] === undefined) {
+        defaultFrontmatter[field.name] = field.default ?? "";
       }
     }
 
@@ -213,6 +284,7 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
 
     setShowNew(false);
     setNewTitle("");
+    setNewPageType("markdown");
     selectEntry(data.path);
   }
 
@@ -320,6 +392,14 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
             showNew={showNew}
             newTitle={newTitle}
             creating={creating}
+            pageTypes={pageTypes}
+            newPageType={newPageType}
+            onNewPageTypeChange={setNewPageType}
+            onPageTypesChanged={reloadPageTypes}
+            totalEntries={totalEntries}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={loadMoreEntries}
             onShowNew={setShowNew}
             onNewTitleChange={setNewTitle}
             onCreate={handleCreate}

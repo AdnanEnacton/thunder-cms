@@ -75,6 +75,20 @@ export function getFrameworkDefaults(framework: GitFramework): FrameworkDefaults
   return FRAMEWORK_DEFAULTS[framework];
 }
 
+/** Default folder scanned for block components, by framework. */
+export function defaultComponentsRoot(framework: GitFramework | null | undefined): string {
+  switch (framework) {
+    case "nuxt":
+      return "components";
+    case "hugo":
+    case "jekyll":
+      return "layouts/partials";
+    default:
+      // astro, nextjs, sveltekit, eleventy, unknown
+      return "src/components";
+  }
+}
+
 export function listDirectories(tree: GitTreeEntry[]): string[] {
   const dirs = new Set<string>();
 

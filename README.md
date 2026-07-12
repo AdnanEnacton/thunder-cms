@@ -77,26 +77,33 @@ Open [http://localhost:3000](http://localhost:3000).
 - [x] Create / save / delete entries → Git commits
 - [x] Left sidebar: Content, Media Library, Config Files
 - [x] Config file editor (JSON/YAML visual + raw, TS/JS raw)
-- [x] Entry list with **sort** (updated / title / date) + **filter by draft** + search
+- [x] Entry list with **sort** (updated / title / date) + **filter by draft** + search + **paginated "Load more"**
 
 ### Phase 3 — Media & team
 - [x] Media library (browse, upload, delete, copy public path) with **grid + list views**
 - [x] Media picker in body editor (upload / library / URL)
 - [x] Media picker in frontmatter image fields (Browse button)
-- [x] Team invites (email-based, copy-link flow; no SMTP yet)
+- [x] Team invites — sends an **email via SMTP** when configured (`SMTP_*` env vars), falls back to copy-link otherwise
 - [x] RBAC (Owner vs Editor) enforced on all routes
 - [x] Activity log (audit trail UI + API, written on every save/upload/configure)
-- [x] SHA-based conflict detection on save (GitHub 409 on stale blob)
+- [x] **Conflict resolution** on save — on a stale-SHA 409, choose Reload latest / Overwrite / Keep editing
 
-## Next (Phase 4 — Pro features)
+### Phase 4 — Pro features
 
-- [ ] Custom commit messages (modal on save)
-- [ ] Branch targeting (save to staging)
-- [ ] PR creation (staging → main)
-- [ ] Version history / rollback
-- [ ] Live preview iframe
-- [ ] Global search (Cmd+K)
-- [ ] AI assistant (BYOK)
+- [x] Custom commit messages (modal on save)
+- [x] Branch targeting (save to staging)
+- [x] Version history / rollback
+- [x] Live preview iframe
+- [x] Global search (Cmd+K)
+- [x] AI assistant (BYOK OpenAI)
+
+> PR creation is intentionally not built — deployment/promotion is handled by GitHub Actions
+> on the `editor` branch (a `src/config/deploy.json` trigger bump drives editor → staging → main).
+
+## Next (Phase 5 — Polish & scale)
+
+- [ ] GitLab provider, WebSocket presence/cursors, MDX shortcodes, deploy-status webhooks, SEO suggestions
+- [ ] (Production hardening) PostgreSQL migration, OAuth token encryption, tests + CI
 
 ## Project structure
 
