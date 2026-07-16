@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 interface CommitMessageDialogProps {
   open: boolean;
   defaultTitle: string;
+  /** Full default message, e.g. `Upload: "photo.png"`. Defaults to `Update: "<defaultTitle>"`. */
+  defaultMessage?: string;
   saving: boolean;
   onClose: () => void;
   onConfirm: (message: string) => void;
@@ -16,6 +18,7 @@ interface CommitMessageDialogProps {
 export function CommitMessageDialog({
   open,
   defaultTitle,
+  defaultMessage,
   saving,
   onClose,
   onConfirm,
@@ -25,10 +28,10 @@ export function CommitMessageDialog({
 
   useEffect(() => {
     if (open) {
-      setMessage(`Update: "${defaultTitle}"`);
+      setMessage(defaultMessage ?? `Update: "${defaultTitle}"`);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [open, defaultTitle]);
+  }, [open, defaultTitle, defaultMessage]);
 
   if (!open) return null;
 

@@ -3,9 +3,16 @@
 > How Thunder goes from "edit markdown files in a Git repo" to "visually compose real pages
 > out of your own components" — and why a new user picks Thunder over TinaCMS, StudioCMS, or Sitepins.
 
-**Status:** Proposal / architecture plan — key decisions locked (see §13)
-**Author context:** Requested 2026-07-11
-**Related docs:** `SITEPINS-CLONE-PLAN.md`, `PROGRESS-TRACKER.md`, `AGENTS.md`
+**Status:** Proposal / architecture plan — key decisions locked (see §13)  
+**Author context:** Requested 2026-07-11  
+**Related docs:** `SITEPINS-CLONE-PLAN.md`, `PROGRESS-TRACKER.md`, `AGENTS.md`, **`THUNDER-COMPONENTS-NPM-MODEL.md`** (next evolution: npm install + `thunder.config.ts`)
+
+> ## 🔜 Next evolution — npm + config-driven blocks (2026-07-16)
+>
+> The page builder shipped in this plan (Phase 0–3). The **registration model** is evolving:
+> see **`THUNDER-COMPONENTS-NPM-MODEL.md`** for installing blocks via `pnpm add @thunder/blocks-*`,
+> declaring them in `thunder.config.ts`, optional `defaults`/`props`, and content-only blocks.
+> Page editor UX (palette · reorder · duplicate · field panel) stays as built here.
 
 > ## ✅ Implementation status — all phases delivered (2026-07-12)
 >

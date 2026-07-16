@@ -271,7 +271,7 @@ export function SetupWizard({
                     onChange={(e) => setCommitMessageMode(e.target.value as "auto" | "custom")}
                     className="flex h-10 w-full rounded-[10px] border border-border bg-surface-raised px-3.5 text-sm shadow-xs focus-visible:border-thunder-500 focus-visible:outline-none"
                   >
-                    <option value="auto">Auto-generate (e.g. Update: "Title")</option>
+                    <option value="auto">Auto-generate (e.g. Update: &quot;Title&quot;)</option>
                     <option value="custom">Ask me before each save</option>
                   </select>
                   <p className="text-xs text-muted">In custom mode, a dialog asks for a commit message on each save.</p>
@@ -285,7 +285,7 @@ export function SetupWizard({
                     onChange={(e) => setPreviewUrl(e.target.value)}
                     placeholder="https://your-staging-site.vercel.app"
                   />
-                  <p className="text-xs text-muted">A staging URL shown in the editor's live preview pane.</p>
+                  <p className="text-xs text-muted">A staging URL shown in the editor&apos;s live preview pane.</p>
                 </div>
               </div>
             </div>

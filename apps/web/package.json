@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",
@@ -40,8 +42,16 @@
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
+    "@thunder/blocks-config": "workspace:*",
+    "@thunder/blocks-marketing": "workspace:*",
+    "@thunder/blocks-runtime": "workspace:*",
     "@types/turndown": "^5.0.6",
+    "@eslint/eslintrc": "^3.3.1",
+    "eslint": "^9.29.0",
+    "eslint-config-next": "^15.3.3",
     "tailwindcss": "^4.1.8",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
   }
 }

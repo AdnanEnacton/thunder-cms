@@ -21,7 +21,7 @@ export default async function DashboardPage() {
     },
   });
 
-  const projects = memberships.flatMap((m: any) => m.organization.projects);
+  const projects = memberships.flatMap((m) => m.organization.projects);
   const configured = projects.filter((p) => p.isConfigured).length;
   const pending = projects.filter((p) => !p.isConfigured).length;
 

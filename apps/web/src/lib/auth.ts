@@ -19,7 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   logger: {
     error(error) {
-      console.error("[AUTH ERROR]", error.name, (error as any).cause ?? error.message);
+      console.error("[AUTH ERROR]", error.name, error.cause ?? error.message);
     },
   },
   providers: [

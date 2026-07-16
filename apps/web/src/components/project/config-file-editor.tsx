@@ -5,6 +5,7 @@ import type { ContentDocument, FieldSchema } from "@thunder/types";
 import { FieldInput } from "@/components/content/field-input";
 import { inferFieldSchema } from "@/lib/content/schema";
 import { Button } from "@/components/ui/button";
+import { CommitMessageDialog } from "@/components/content/commit-message-dialog";
 
 interface ConfigFileEditorProps {
   projectId: string;
@@ -23,6 +24,15 @@ export function ConfigFileEditor({ projectId, filePath, onBack }: ConfigFileEdit
   const [body, setBody] = useState("");
   const [fields, setFields] = useState<FieldSchema[]>([]);
   const [mode, setMode] = useState<"visual" | "raw">("visual");
+  const [commitMessageMode, setCommitMessageMode] = useState<"auto" | "custom">("auto");
+  const [showCommitDialog, setShowCommitDialog] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}`)
+      .then((r) => r.json())
+      .then((d) => setCommitMessageMode(d.project?.commitMessageMode ?? "auto"))
+      .catch(() => {});
+  }, [projectId]);
 
   useEffect(() => {
     async function load() {
@@ -65,10 +75,19 @@ export function ConfigFileEditor({ projectId, filePath, onBack }: ConfigFileEdit
     setFrontmatter((prev) => ({ ...prev, [name]: value }));
   }
 
-  async function handleSave() {
+  function handleSaveClick() {
+    if (commitMessageMode === "custom") {
+      setShowCommitDialog(true);
+    } else {
+      handleSave(null);
+    }
+  }
+
+  async function handleSave(message: string | null) {
     setSaving(true);
     setError("");
     setSuccess("");
+    setShowCommitDialog(false);
 
     let payloadFrontmatter = frontmatter;
     let payloadBody = body;
@@ -93,6 +112,7 @@ export function ConfigFileEditor({ projectId, filePath, onBack }: ConfigFileEdit
         frontmatter: payloadFrontmatter,
         body: payloadBody,
         format,
+        message,
       }),
     });
 
@@ -144,7 +164,7 @@ export function ConfigFileEditor({ projectId, filePath, onBack }: ConfigFileEdit
               </button>
             </div>
           )}
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSaveClick} disabled={saving}>
             {saving ? "Saving..." : "Save changes"}
           </Button>
         </div>
@@ -194,6 +214,14 @@ export function ConfigFileEditor({ projectId, filePath, onBack }: ConfigFileEdit
           />
         )}
       </div>
+
+      <CommitMessageDialog
+        open={showCommitDialog}
+        defaultTitle={filePath.split("/").pop() ?? filePath}
+        saving={saving}
+        onClose={() => setShowCommitDialog(false)}
+        onConfirm={(message) => handleSave(message)}
+      />
     </div>
   );
 }

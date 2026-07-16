@@ -66,6 +66,7 @@ export async function POST(
   const formData = await request.formData();
   const file = formData.get("file");
   const folder = String(formData.get("folder") ?? "").trim();
+  const customMessage = String(formData.get("message") ?? "").trim();
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "file is required" }, { status: 400 });
@@ -85,7 +86,7 @@ export async function POST(
       getProjectBranch(project),
       path,
       buffer,
-      `Upload: "${safeName}"`,
+      customMessage || `Upload: "${safeName}"`,
     );
 
     await prisma.activityLog.create({

@@ -50,6 +50,8 @@ export function PageBuilder({
   const [overrides, setOverrides] = useState<BlockDef[]>([]);
   const [pageTypeDefs, setPageTypeDefs] = useState<PageTypeDef[]>([]);
   const [registryLoading, setRegistryLoading] = useState(true);
+  const [registrySource, setRegistrySource] = useState<"config" | "folder-scan" | null>(null);
+  const [registryWarnings, setRegistryWarnings] = useState<string[]>([]);
   const [selected, setSelected] = useState<number | "page" | null>("page");
   const [rendererOpen, setRendererOpen] = useState(false);
 
@@ -69,6 +71,9 @@ export function PageBuilder({
       setRegistry(Array.isArray(data.blocks) ? data.blocks : []);
       setOverrides(Array.isArray(data.overrides) ? data.overrides : []);
       setPageTypeDefs(Array.isArray(data.pageTypes) ? data.pageTypes : []);
+      setRegistrySource(data.source === "config" ? "config" : "folder-scan");
+      const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+      setRegistryWarnings(data.warning ? [data.warning, ...warnings] : warnings);
     }
     setRegistryLoading(false);
   }, [projectId]);
@@ -174,6 +179,8 @@ export function PageBuilder({
       <BlockPalette
         blocks={paletteBlocks}
         loading={registryLoading}
+        source={registrySource}
+        warnings={registryWarnings}
         onAdd={addBlock}
         onEdit={(def) => {
           setEditingDef(def);

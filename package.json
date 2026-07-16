@@ -5,6 +5,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "test": "turbo test",
     "db:generate": "pnpm --filter @thunder/database generate",
     "db:push": "pnpm --filter @thunder/database push",
     "db:studio": "pnpm --filter @thunder/database studio"

@@ -1,6 +1,6 @@
 "use client";
 
-import { Blocks, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, Blocks, Package, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import type { BlockDef } from "@thunder/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 interface BlockPaletteProps {
   blocks: BlockDef[];
   loading?: boolean;
+  source?: "config" | "folder-scan" | null;
+  warnings?: string[];
   onAdd: (def: BlockDef) => void;
   onEdit: (def: BlockDef) => void;
   onDelete: (def: BlockDef) => void;
@@ -28,6 +30,8 @@ function groupByCategory(blocks: BlockDef[]): [string, BlockDef[]][] {
 export function BlockPalette({
   blocks,
   loading,
+  source,
+  warnings,
   onAdd,
   onEdit,
   onDelete,
@@ -65,6 +69,37 @@ export function BlockPalette({
           </button>
         </div>
       </div>
+
+      {source === "config" && (
+        <div
+          className="flex items-center gap-1.5 border-b border-border bg-thunder-50 px-4 py-1.5 text-[11px] font-medium text-thunder-700 dark:bg-thunder-500/10 dark:text-thunder-400"
+          title="Blocks are coming from thunder.config.ts"
+        >
+          <Package className="h-3 w-3 shrink-0" />
+          thunder.config.ts
+        </div>
+      )}
+
+      {source === "folder-scan" && (
+        <div
+          className="flex items-center gap-1.5 border-b border-border bg-surface-subtle px-4 py-1.5 text-[11px] text-muted"
+          title="Scanning the components folder is the legacy discovery mode. Add thunder.config.ts in Project Settings for an explicit, versioned block registry."
+        >
+          <Package className="h-3 w-3 shrink-0" />
+          Folder scan (legacy) — set up thunder.config.ts in Settings
+        </div>
+      )}
+
+      {!!warnings?.length && (
+        <div className="space-y-1 border-b border-border bg-amber-50 px-4 py-2 text-[11px] text-amber-800 dark:bg-amber-500/10 dark:text-amber-400">
+          {warnings.map((w, i) => (
+            <div key={i} className="flex items-start gap-1.5">
+              <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>{w}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex-1 overflow-auto p-3">
         {loading ? (
