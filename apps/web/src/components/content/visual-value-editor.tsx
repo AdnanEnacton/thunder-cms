@@ -2,7 +2,7 @@
 
 import type { BlockFieldDef } from "@thunder/types";
 import { ImageFieldInput } from "@/components/content/image-field-input";
-import { ItemList } from "@/components/content/item-list";
+import { RichTextFieldInput } from "@/components/content/richtext-field-input";
 import {
   collectTemplateOptions,
   type ControlKind,
@@ -10,7 +10,6 @@ import {
   getArrayItemLabel,
   humanizeFieldKey,
   inferControlKind,
-  isListArrayField,
   sortObjectKeys,
 } from "@/lib/content/field-ui";
 import { CollapsibleCard } from "@/components/ui/collapsible-card";
@@ -188,6 +187,19 @@ export function VisualValueEditor({
     );
   }
 
+  if (control === "richtext") {
+    return (
+      <RichTextFieldInput
+        id={id}
+        label={label ?? humanizeFieldKey(fieldKey)}
+        value={String(value ?? "")}
+        onChange={onChange}
+        variant={variant}
+        help={help}
+      />
+    );
+  }
+
   if (control === "textarea") {
     const keyLower = fieldKey.toLowerCase();
     const isLongText =
@@ -277,7 +289,10 @@ function ObjectEditor({
   blockFields?: BlockFieldDef[];
 }) {
   const isNestedGroup = depth > 0;
-  const groupLabel = label ?? humanizeFieldKey(fieldKey);
+  // An explicit empty-string label means the caller (e.g. an array item wrapper
+  // that already rendered its own "Faqs Item 2 / Remove" header) opts out of
+  // this component's own group heading, to avoid showing the same label twice.
+  const groupLabel = label !== undefined ? label : humanizeFieldKey(fieldKey);
   const isFlat = variant === "flat";
   const fieldSpacing = isFlat ? "space-y-4" : "space-y-4";
 
@@ -328,7 +343,7 @@ function ObjectEditor({
   if (isNestedGroup && isFlat) {
     return (
       <div className="space-y-3 border-t border-border pt-4 first:border-t-0 first:pt-0">
-        <p className="text-sm font-medium text-foreground">{groupLabel}</p>
+        {groupLabel && <p className="text-sm font-medium text-foreground">{groupLabel}</p>}
         {fields}
       </div>
     );
@@ -366,21 +381,10 @@ function ArrayEditor({
   const templateOptions = fieldKey === "sections" ? collectTemplateOptions(value) : undefined;
   const isSections = fieldKey === "sections";
   const isFlat = variant === "flat";
-  // A schema-defined item shape gets the structured per-item editor below, not
-  // the compact ItemList (which relies on key-name heuristics).
-  const useItemList =
-    isFlat && !isSections && !itemFields?.length && isListArrayField(fieldKey, value);
+  const itemLabelSingular = humanizeFieldKey(fieldKey).replace(/s$/, "") || "item";
 
-  if (useItemList) {
-    return (
-      <ItemList
-        fieldKey={fieldKey}
-        items={value}
-        onChange={onChange}
-        templateOptions={templateOptions}
-        projectId={projectId}
-      />
-    );
+  function addItem() {
+    onChange([...value, itemFields?.length ? buildFromFields(itemFields) : blankClone(value)]);
   }
 
   return (
@@ -398,16 +402,23 @@ function ArrayEditor({
         </div>
       )}
 
+      {isFlat && value.length === 0 && (
+        <p className="rounded-xl border border-dashed border-border bg-surface-subtle px-4 py-4 text-center text-sm text-muted">
+          No items yet. Click + Add {itemLabelSingular} below.
+        </p>
+      )}
+
       {value.map((item, index) => {
         const itemLabel = getArrayItemLabel(item, index, fieldKey);
-        const template =
-          typeof item === "object" && item !== null && !Array.isArray(item)
-            ? String((item as Record<string, unknown>)._template ?? "")
-            : "";
+        const isObjectItem = typeof item === "object" && item !== null && !Array.isArray(item);
+        const template = isObjectItem ? String((item as Record<string, unknown>)._template ?? "") : "";
 
         const editor = (
           <VisualValueEditor
             fieldKey={`${fieldKey}[${index}]`}
+            // Flat mode already renders this item's label + Remove below —
+            // suppress the nested object editor's own duplicate heading.
+            label={isFlat && isObjectItem ? "" : undefined}
             value={item}
             templateOptions={templateOptions}
             onChange={(next) => {
@@ -429,15 +440,13 @@ function ArrayEditor({
             <div key={`${fieldKey}-${index}`} className="space-y-3 border-t border-border pt-4 first:border-t-0 first:pt-0">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted">{itemLabel}</p>
-                {itemFields?.length ? (
-                  <button
-                    type="button"
-                    onClick={removeItem}
-                    className="text-xs text-muted transition-colors hover:text-destructive"
-                  >
-                    Remove
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={removeItem}
+                  className="text-xs text-muted transition-colors hover:text-destructive"
+                >
+                  Remove
+                </button>
               </div>
               {editor}
             </div>
@@ -456,17 +465,38 @@ function ArrayEditor({
         );
       })}
 
-      {itemFields?.length ? (
+      {(isFlat || itemFields?.length) && (
         <button
           type="button"
-          onClick={() => onChange([...value, buildFromFields(itemFields)])}
+          onClick={addItem}
           className="w-full rounded-lg border border-dashed border-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:border-thunder-400 hover:text-thunder-600"
         >
-          + Add {humanizeFieldKey(fieldKey).replace(/s$/, "") || "item"}
+          + Add {itemLabelSingular}
         </button>
-      ) : null}
+      )}
     </div>
   );
+}
+
+/** Best-effort template for a new item in a schema-less array — clones the shape
+ * of an existing item with blanked-out values (used when no `itemFields` exist). */
+function blankClone(items: unknown[]): Record<string, unknown> {
+  const sample = items.find(
+    (item) => typeof item === "object" && item !== null && !Array.isArray(item),
+  ) as Record<string, unknown> | undefined;
+
+  if (!sample) return {};
+
+  const template: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(sample)) {
+    if (typeof value === "boolean") template[key] = false;
+    else if (typeof value === "number") template[key] = 0;
+    else if (typeof value === "string") template[key] = "";
+    else if (Array.isArray(value)) template[key] = [];
+    else if (typeof value === "object" && value !== null) template[key] = {};
+    else template[key] = "";
+  }
+  return template;
 }
 
 /** Seed an object from a list of field definitions (used when adding array items). */

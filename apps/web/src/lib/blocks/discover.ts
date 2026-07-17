@@ -117,8 +117,9 @@ function extractFields(
   const propsNode = findPropsDeclaration(ast, componentNameFromPath(path));
   if (!propsNode) return [];
 
+  const typeMap = collectTypeDeclarations(ast);
   return getMembers(propsNode)
-    .map((m) => memberToField(m))
+    .map((m) => memberToField(m, typeMap))
     .filter((f): f is BlockFieldDef => f !== null);
 }
 
@@ -174,14 +175,47 @@ function getMembers(
   return [];
 }
 
-function memberToField(member: TSTypeElement): BlockFieldDef | null {
+type TypeMap = Map<string, TSInterfaceDeclaration | TSTypeAliasDeclaration>;
+
+/** Every named `interface`/`type` declared in the file, keyed by name — lets array
+ * element types and object props resolve a named reference (`faqs: FaqItem[]`),
+ * not just inline object literals (`faqs: { question: string }[]`). */
+function collectTypeDeclarations(ast: Node): TypeMap {
+  const map: TypeMap = new Map();
+  walk(ast, (node) => {
+    if (node.type === "TSInterfaceDeclaration" || node.type === "TSTypeAliasDeclaration") {
+      const id = node.id;
+      if (id && id.type === "Identifier") map.set(id.name, node);
+    }
+  });
+  return map;
+}
+
+/** Resolve a named type's own members as fields. `seen` guards against a type that
+ * (directly or indirectly) references itself. Returns null when unresolvable. */
+function resolveNamedTypeFields(
+  name: string,
+  typeMap: TypeMap,
+  seen: Set<string>,
+): BlockFieldDef[] | null {
+  const decl = typeMap.get(name);
+  if (!decl || seen.has(name)) return null;
+  seen.add(name);
+  const fields = getMembers(decl)
+    .map((m) => memberToField(m, typeMap, seen))
+    .filter((f): f is BlockFieldDef => f !== null);
+  seen.delete(name);
+  return fields;
+}
+
+function memberToField(member: TSTypeElement, typeMap: TypeMap, seen: Set<string> = new Set()): BlockFieldDef | null {
   if (member.type !== "TSPropertySignature") return null;
   const sig = member as TSPropertySignature;
   if (!sig.key || sig.key.type !== "Identifier") return null;
 
   const name = sig.key.name;
   const typeNode = sig.typeAnnotation?.typeAnnotation;
-  const mapped = typeNode ? mapType(typeNode, name) : { type: "string" as BlockFieldType };
+  const mapped = typeNode ? mapType(typeNode, name, typeMap, seen) : { type: "string" as BlockFieldType };
 
   const field: BlockFieldDef = {
     name,
@@ -203,7 +237,7 @@ interface MappedType {
   of?: BlockFieldDef;
 }
 
-function mapType(node: TSType, keyName: string): MappedType {
+function mapType(node: TSType, keyName: string, typeMap: TypeMap, seen: Set<string> = new Set()): MappedType {
   const key = keyName.toLowerCase();
 
   switch (node.type) {
@@ -218,15 +252,21 @@ function mapType(node: TSType, keyName: string): MappedType {
       if (el.type === "TSStringKeyword") return { type: "tags" };
       if (el.type === "TSTypeLiteral") {
         const fields = el.members
-          .map((m) => memberToField(m))
+          .map((m) => memberToField(m, typeMap, seen))
           .filter((f): f is BlockFieldDef => f !== null);
         return { type: "array", of: { name: "item", label: "Item", type: "object", fields } };
+      }
+      if (el.type === "TSTypeReference" && el.typeName.type === "Identifier") {
+        const fields = resolveNamedTypeFields(el.typeName.name, typeMap, seen);
+        if (fields) {
+          return { type: "array", of: { name: "item", label: "Item", type: "object", fields } };
+        }
       }
       return { type: "array" };
     }
     case "TSTypeLiteral": {
       const fields = node.members
-        .map((m) => memberToField(m))
+        .map((m) => memberToField(m, typeMap, seen))
         .filter((f): f is BlockFieldDef => f !== null);
       return { type: "object", fields };
     }
@@ -253,7 +293,15 @@ function mapType(node: TSType, keyName: string): MappedType {
         return mapType(
           { type: "TSArrayType", elementType: firstArg } as TSType,
           keyName,
+          typeMap,
+          seen,
         );
+      }
+      // A bare named reference to a locally-declared interface/type (e.g. a prop
+      // typed `cta: CtaButton`) — resolve its members the same as an inline `{ ... }`.
+      if (node.typeName.type === "Identifier") {
+        const fields = resolveNamedTypeFields(node.typeName.name, typeMap, seen);
+        if (fields) return { type: "object", fields };
       }
       return { type: refineStringType(key) };
     }

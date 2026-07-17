@@ -4,6 +4,7 @@ export type ControlKind =
   | "toggle"
   | "text"
   | "textarea"
+  | "richtext"
   | "number"
   | "url"
   | "image"
@@ -22,8 +23,9 @@ export function controlFromBlockFieldType(type: BlockFieldType): ControlKind | n
     case "string":
       return "text";
     case "text":
-    case "richtext":
       return "textarea";
+    case "richtext":
+      return "richtext";
     case "number":
       return "number";
     case "boolean":
