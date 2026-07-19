@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ThunderConfig } from "@thunder/types";
 import { commitThunderConfig } from "@/lib/github";
-import { syncOrgGithubTokenForUser } from "@/lib/org-github";
 import { getProjectForUser } from "@/lib/project-auth";
 import { prisma } from "@thunder/database";
 import { z } from "zod";
@@ -40,10 +39,6 @@ export async function POST(
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  }
-
-  if (session.githubAccessToken) {
-    await syncOrgGithubTokenForUser(session.user.id, session.githubAccessToken);
   }
 
   const contentRoots = [

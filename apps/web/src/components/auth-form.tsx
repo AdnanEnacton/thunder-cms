@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,15 +33,14 @@ export function LoginForm() {
     setLoading(true);
     setError("");
 
-    const result = await signIn("credentials", {
+    const { error } = await authClient.signIn.email({
       email,
       password,
-      redirect: false,
     });
 
     setLoading(false);
 
-    if (result?.error) {
+    if (error) {
       setError("Invalid email or password");
       return;
     }
@@ -87,7 +86,9 @@ export function LoginForm() {
         type="button"
         variant="secondary"
         className="w-full"
-        onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+        onClick={() =>
+          authClient.signIn.social({ provider: "github", callbackURL: "/dashboard" })
+        }
       >
         <Github className="h-4 w-4" />
         Continue with GitHub
@@ -109,29 +110,16 @@ export function RegisterForm() {
     setLoading(true);
     setError("");
 
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      setError(data.error ?? "Registration failed");
-      setLoading(false);
-      return;
-    }
-
-    const result = await signIn("credentials", {
+    const { error } = await authClient.signUp.email({
+      name,
       email,
       password,
-      redirect: false,
     });
 
     setLoading(false);
 
-    if (result?.error) {
-      setError("Account created but sign-in failed. Please log in.");
+    if (error) {
+      setError(error.message ?? "Registration failed");
       return;
     }
 
@@ -187,7 +175,9 @@ export function RegisterForm() {
         type="button"
         variant="secondary"
         className="w-full"
-        onClick={() => signIn("github", { callbackUrl: "/dashboard" })}
+        onClick={() =>
+          authClient.signIn.social({ provider: "github", callbackURL: "/dashboard" })
+        }
       >
         <Github className="h-4 w-4" />
         Sign up with GitHub

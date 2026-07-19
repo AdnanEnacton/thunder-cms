@@ -19,9 +19,9 @@ const ACTION_META: Record<
   { label: string; icon: React.ComponentType<{ className?: string }>; color: string }
 > = {
   "entry.created":     { label: "Created",       icon: FilePlus,  color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400" },
-  "entry.updated":     { label: "Updated",        icon: FileEdit,  color: "text-blue-500 bg-blue-50 dark:bg-blue-500/10 dark:text-blue-400" },
+  "entry.updated":     { label: "Updated",        icon: FileEdit,  color: "text-thunder-600 bg-thunder-50 dark:bg-thunder-500/10 dark:text-thunder-400" },
   "entry.deleted":     { label: "Deleted",        icon: FileX,     color: "text-red-500 bg-red-50 dark:bg-red-500/10 dark:text-red-400" },
-  "media.uploaded":    { label: "Media uploaded", icon: Upload,    color: "text-purple-500 bg-purple-50 dark:bg-purple-500/10 dark:text-purple-400" },
+  "media.uploaded":    { label: "Media uploaded", icon: Upload,    color: "text-stone-600 bg-stone-100 dark:bg-stone-500/10 dark:text-stone-300" },
   "media.deleted":     { label: "Media deleted",  icon: Trash2,    color: "text-red-500 bg-red-50 dark:bg-red-500/10 dark:text-red-400" },
   "project.configured":{ label: "Configured",     icon: Settings,  color: "text-thunder-500 bg-thunder-50 dark:bg-thunder-500/10 dark:text-thunder-400" },
   "config.updated":    { label: "Config updated", icon: Settings,  color: "text-amber-500 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400" },

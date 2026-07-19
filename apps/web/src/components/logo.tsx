@@ -1,40 +1,45 @@
 import { Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function Logo({ className, size = "default" }: { className?: string; size?: "default" | "lg" }) {
+export function Logo({
+  className,
+  size = "default",
+  light = false,
+}: {
+  className?: string;
+  size?: "default" | "lg";
+  light?: boolean;
+}) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
       <div
         className={cn(
-          "flex items-center justify-center rounded-[10px] bg-gradient-to-br from-thunder-500 to-thunder-700 shadow-sm",
-          size === "lg" ? "h-10 w-10" : "h-8 w-8",
+          "flex items-center justify-center rounded-lg bg-gradient-to-br from-thunder-500 to-thunder-700 shadow-xs",
+          size === "lg" ? "h-9 w-9" : "h-7 w-7",
         )}
       >
         <Zap
-          className={cn("text-white", size === "lg" ? "h-5 w-5" : "h-4 w-4")}
+          className={cn("text-white", size === "lg" ? "h-4 w-4" : "h-3.5 w-3.5")}
           fill="currentColor"
         />
       </div>
-      <div className="flex flex-col">
+      <span
+        className={cn(
+          "font-semibold tracking-tight",
+          size === "lg" ? "text-lg" : "text-[15px]",
+          light ? "text-white" : "text-foreground",
+        )}
+      >
+        THUNDER
         <span
           className={cn(
-            "font-bold tracking-tight text-foreground",
-            size === "lg" ? "text-lg" : "text-sm",
+            "ml-1 font-medium",
+            light ? "text-white/55" : "text-muted",
           )}
         >
-          THUNDER
+          CMS
         </span>
-        {size === "lg" && (
-          <span className="text-[10px] font-medium uppercase tracking-widest text-muted">
-            CMS
-          </span>
-        )}
-        {size === "default" && (
-          <span className="-mt-0.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-muted">
-            CMS
-          </span>
-        )}
-      </div>
+      </span>
     </div>
   );
 }

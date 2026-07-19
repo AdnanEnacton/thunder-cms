@@ -1,175 +1,142 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  GitBranch,
-  Layers,
-  Lock,
-  Sparkles,
-  Users,
-  Zap,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 
-const features = [
+const steps = [
   {
-    icon: GitBranch,
-    title: "Git-native workflow",
-    description:
-      "Every edit becomes a versioned commit. Your content stays in your repo — always yours.",
-    accent: "from-blue-500/10 to-blue-600/5",
+    n: "01",
+    title: "Connect a repo",
+    body: "Authorize GitHub and pick the repository that already holds your content.",
   },
   {
-    icon: Sparkles,
-    title: "Zero configuration",
-    description:
-      "Connect your repo, pick folders, and start editing in minutes. No migrations, no lock-in.",
-    accent: "from-violet-500/10 to-violet-600/5",
+    n: "02",
+    title: "Point at folders",
+    body: "Choose content and media paths. Thunder writes a small config — nothing else changes.",
   },
   {
-    icon: Layers,
-    title: "Works with your stack",
-    description:
-      "Astro, Next.js, Hugo, Eleventy, and more. We read your existing files — no code changes.",
-    accent: "from-emerald-500/10 to-emerald-600/5",
+    n: "03",
+    title: "Edit and commit",
+    body: "Editors work visually. Every save is a real Git commit on the branch you choose.",
   },
-];
-
-const pillars = [
-  { icon: Lock, label: "Your repo, your data" },
-  { icon: Users, label: "Built for teams" },
-  { icon: Zap, label: "Ship faster" },
 ];
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen gradient-mesh">
-      <header className="sticky top-0 z-50 border-b border-border/60 glass">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-          <Logo />
-          <nav className="flex items-center gap-2">
+    <div className="min-h-screen bg-surface text-foreground">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[#0c0c0e]/70 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
+          <Logo light />
+          <nav className="flex items-center gap-1.5">
             <Link href="/login">
-              <Button variant="ghost" size="sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white/70 hover:bg-white/8 hover:text-white"
+              >
                 Sign in
               </Button>
             </Link>
             <Link href="/register">
-              <Button size="sm">
+              <Button
+                size="sm"
+                className="bg-thunder-500 text-white hover:bg-thunder-400"
+              >
                 Get started
-                <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
           </nav>
         </div>
       </header>
 
-      <main>
-        {/* Hero */}
-        <section className="mx-auto max-w-6xl px-6 pb-24 pt-20 sm:pt-28">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-thunder-500/20 bg-thunder-500/8 px-4 py-1.5 text-sm font-medium text-thunder-700">
-              <Zap className="h-3.5 w-3.5" fill="currentColor" />
-              Git-based CMS for static sites
-            </div>
+      <section className="landing-hero relative flex min-h-dvh flex-col justify-center px-6 pb-20 pt-28">
+        <div className="landing-hero-grid" aria-hidden />
+        <div className="landing-hero-glow" aria-hidden />
 
-            <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              The easiest way to hand off static sites to your team
-            </h1>
+        <div className="relative z-10 mx-auto w-full max-w-4xl">
+          <p className="landing-fade-up font-display text-[clamp(3.5rem,12vw,7.5rem)] leading-[0.9] tracking-tight text-white">
+            THUNDER
+          </p>
 
-            <p className="mx-auto mt-6 max-w-2xl text-balance text-lg leading-relaxed text-muted">
-              THUNDER-CMS connects to your GitHub repo, reads your existing Markdown and
-              config files, and gives editors a visual interface — no code changes required.
-            </p>
+          <h1 className="landing-fade-up landing-fade-up-delay-1 mt-6 max-w-xl text-balance text-2xl font-medium tracking-tight text-white/90 sm:text-3xl">
+            Hand your static site to the team — keep everything in Git.
+          </h1>
 
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-              <Link href="/register">
-                <Button size="lg" className="min-w-[180px]">
-                  Start for free
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="secondary" size="lg" className="min-w-[180px]">
-                  Sign in
-                </Button>
-              </Link>
-            </div>
+          <p className="landing-fade-up landing-fade-up-delay-2 mt-5 max-w-lg text-base leading-relaxed text-white/50 sm:text-lg">
+            Connect a GitHub repo, open Markdown in a visual editor, and ship commits.
+            No CMS lock-in. No schema migrations.
+          </p>
 
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-muted">
-              {pillars.map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-thunder-500" />
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
+          <div className="landing-fade-up landing-fade-up-delay-3 mt-10 flex flex-wrap items-center gap-3">
+            <Link href="/register">
+              <Button
+                size="lg"
+                className="bg-thunder-500 text-white shadow-[0_0_32px_rgba(196,92,38,0.35)] hover:bg-thunder-400"
+              >
+                Start for free
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/15 bg-transparent text-white/80 hover:border-white/30 hover:bg-white/5 hover:text-white"
+              >
+                Sign in
+              </Button>
+            </Link>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features */}
-        <section className="mx-auto max-w-6xl px-6 pb-24">
-          <div className="mb-12 text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Everything your team needs
-            </h2>
-            <p className="mt-3 text-muted">
-              A polished editing experience on top of the workflow you already trust.
-            </p>
-          </div>
+      <section className="border-t border-border bg-surface-raised px-6 py-24">
+        <div className="mx-auto max-w-5xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-thunder-600">
+            How it works
+          </p>
+          <h2 className="mt-3 max-w-md font-display text-3xl tracking-tight text-foreground sm:text-4xl">
+            Three steps. Same repo you already own.
+          </h2>
 
-          <div className="grid gap-5 sm:grid-cols-3">
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={feature.title}
-                  className="surface-card surface-card-hover group p-7"
-                >
-                  <div
-                    className={`mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${feature.accent} ring-1 ring-border transition-transform duration-200 group-hover:scale-105`}
-                  >
-                    <Icon className="h-5 w-5 text-thunder-600" />
-                  </div>
-                  <h3 className="text-base font-semibold tracking-tight">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+          <ol className="mt-14 grid gap-10 sm:grid-cols-3 sm:gap-8">
+            {steps.map((step) => (
+              <li key={step.n} className="relative">
+                <span className="font-display text-4xl text-thunder-500/35">{step.n}</span>
+                <h3 className="mt-3 text-base font-semibold tracking-tight">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{step.body}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
 
-        {/* CTA */}
-        <section className="mx-auto max-w-6xl px-6 pb-24">
-          <div className="relative overflow-hidden rounded-2xl border border-thunder-500/15 bg-gradient-to-br from-thunder-600 to-thunder-800 px-8 py-14 text-center shadow-lg sm:px-16">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_60%)]" />
-            <div className="relative">
-              <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Ready to empower your content team?
-              </h2>
-              <p className="mx-auto mt-4 max-w-lg text-base text-thunder-100">
-                Connect your first repository in under five minutes. No credit card required.
-              </p>
-              <Link href="/register" className="mt-8 inline-block">
-                <Button
-                  size="lg"
-                  className="bg-white text-thunder-700 hover:bg-thunder-50 hover:text-thunder-800"
-                >
-                  Get started free
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      </main>
+      <section className="relative overflow-hidden border-t border-border px-6 py-24">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_100%,rgba(196,92,38,0.12),transparent_65%)]"
+          aria-hidden
+        />
+        <div className="relative mx-auto max-w-3xl text-center">
+          <h2 className="font-display text-3xl tracking-tight sm:text-4xl">
+            Ready when your repo is.
+          </h2>
+          <p className="mx-auto mt-4 max-w-md text-muted">
+            Connect the first project in a few minutes. Your content never leaves GitHub.
+          </p>
+          <Link href="/register" className="mt-8 inline-block">
+            <Button size="lg">
+              Get started free
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </section>
 
-      <footer className="border-t border-border bg-surface-raised">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8">
+      <footer className="border-t border-border bg-surface-subtle px-6 py-8">
+        <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <Logo />
           <p className="text-sm text-muted">
-            &copy; {new Date().getFullYear()} THUNDER-CMS. Git-native content management.
+            &copy; {new Date().getFullYear()} THUNDER-CMS
           </p>
         </div>
       </footer>

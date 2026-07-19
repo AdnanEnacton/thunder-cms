@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const SECTION_ACCENTS = [
   { bg: "bg-thunder-50", border: "border-thunder-200", text: "text-thunder-700", dot: "bg-thunder-500" },
-  { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", dot: "bg-violet-500" },
+  { bg: "bg-stone-100", border: "border-stone-200", text: "text-stone-700", dot: "bg-stone-500" },
   { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", dot: "bg-emerald-500" },
   { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", dot: "bg-amber-500" },
 ] as const;

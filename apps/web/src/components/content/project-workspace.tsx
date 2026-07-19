@@ -309,7 +309,7 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
 
   if (selectedEntry && view === "content") {
     return (
-      <div className="flex h-screen">
+      <div className="flex h-dvh overflow-hidden">
         <ProjectSidebar
           projectId={projectId}
           projectName={projectName}
@@ -326,7 +326,7 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
           selectedEntryPath={selectedEntry}
           onEntrySelect={selectEntry}
         />
-        <main className="flex-1 overflow-hidden">
+        <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
           <EntryEditor
             projectId={projectId}
             filePath={selectedEntry}
@@ -338,7 +338,7 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-dvh overflow-hidden">
       <ProjectSidebar
         projectId={projectId}
         projectName={projectName}
@@ -357,7 +357,7 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
         onEntrySelect={selectEntry}
       />
 
-      <main className="flex flex-1 flex-col overflow-hidden">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {view === "content" && collections.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-surface p-16 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-overlay">

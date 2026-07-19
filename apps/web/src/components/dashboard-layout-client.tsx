@@ -26,11 +26,11 @@ export function DashboardLayoutClient({ children, user }: DashboardLayoutClientP
   }
 
   return (
-    <div className="flex min-h-screen bg-surface">
+    <div className="flex h-dvh overflow-hidden bg-surface">
       <DashboardSidebar user={user} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-5xl px-8 py-8">{children}</div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <main className="min-h-0 flex-1 overflow-auto">
+          <div className="mx-auto max-w-5xl px-6 py-7 sm:px-8">{children}</div>
         </main>
       </div>
     </div>

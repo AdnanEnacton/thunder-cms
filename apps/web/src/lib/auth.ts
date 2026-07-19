@@ -1,120 +1,104 @@
-import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import GitHub from "next-auth/providers/github";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import bcrypt from "bcryptjs";
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { nextCookies } from "better-auth/next-js";
+import { headers } from "next/headers";
 import { prisma } from "@thunder/database";
-import { authConfig } from "@/lib/auth.config";
 import { syncOrgGithubTokenForUser } from "@/lib/org-github";
 import { slugify } from "@/lib/utils";
-import { z } from "zod";
 
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-});
+async function syncGithubAccountToken(account: {
+  providerId: string;
+  userId: string;
+}) {
+  if (account.providerId !== "github") return;
+  try {
+    // account.accessToken is encrypted at rest (encryptOAuthTokens), so read the
+    // decrypted value back through better-auth's own API.
+    const result = await authInstance.api.getAccessToken({
+      body: { providerId: "github", userId: account.userId },
+    });
+    if (result?.accessToken) {
+      await syncOrgGithubTokenForUser(account.userId, result.accessToken);
+    }
+  } catch {
+    // Best-effort: resolveOrgGithubToken() backfills on demand if this fails.
+  }
+}
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  ...authConfig,
-  adapter: PrismaAdapter(prisma),
-  logger: {
-    error(error) {
-      console.error("[AUTH ERROR]", error.name, (error as any).cause ?? error.message);
+export const authInstance = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+    autoSignIn: true,
+  },
+  account: {
+    // Encrypt OAuth access/refresh tokens at rest in the Account table.
+    encryptOAuthTokens: true,
+  },
+  socialProviders: {
+    github: {
+      clientId: (process.env.AUTH_GITHUB_ID ?? process.env.GITHUB_CLIENT_ID)!,
+      clientSecret: (process.env.AUTH_GITHUB_SECRET ??
+        process.env.GITHUB_CLIENT_SECRET)!,
+      // `repo` is required so the CMS can read/write the connected repository.
+      scope: ["read:user", "user:email", "repo"],
     },
   },
-  providers: [
-    GitHub({
-      clientId: process.env.AUTH_GITHUB_ID ?? process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET ?? process.env.GITHUB_CLIENT_SECRET,
-      authorization: {
-        params: {
-          scope: "read:user user:email repo",
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Bootstrap a personal workspace + owner membership for every new user
+          // (covers both email/password sign-up and first GitHub sign-in).
+          const existing = await prisma.membership.findFirst({
+            where: { userId: user.id },
+          });
+          if (existing) return;
+
+          const displayName =
+            user.name || user.email?.split("@")[0] || "User";
+          const orgName = `${displayName}'s Workspace`;
+
+          await prisma.$transaction(async (tx) => {
+            const organization = await tx.organization.create({
+              data: {
+                name: orgName,
+                slug: `${slugify(orgName)}-${user.id.slice(-6)}`,
+              },
+            });
+
+            await tx.membership.create({
+              data: {
+                userId: user.id,
+                organizationId: organization.id,
+                role: "owner",
+              },
+            });
+          });
         },
       },
-    }),
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        const parsed = credentialsSchema.safeParse(credentials);
-        if (!parsed.success) return null;
-
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
-        });
-
-        if (!user?.passwordHash) return null;
-
-        const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
-        if (!valid) return null;
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
-      },
-    }),
-  ],
-  events: {
-    async signIn({ user, account }) {
-      if (account?.provider !== "github" || !user.id || !account.access_token) return;
-
-      await syncOrgGithubTokenForUser(user.id, account.access_token);
-
-      const existingMembership = await prisma.membership.findFirst({
-        where: { userId: user.id },
-      });
-
-      if (existingMembership) return;
-
-      const displayName = user.name ?? user.email?.split("@")[0] ?? "User";
-      const orgName = `${displayName}'s Workspace`;
-
-      await prisma.$transaction(async (tx) => {
-        const organization = await tx.organization.create({
-          data: {
-            name: orgName,
-            slug: `${slugify(orgName)}-${user.id!.slice(-6)}`,
-            githubAccessToken: account.access_token,
-            githubConnectedAt: new Date(),
-            githubConnectedById: user.id!,
-          },
-        });
-
-        await tx.membership.create({
-          data: {
-            userId: user.id!,
-            organizationId: organization.id,
-            role: "owner",
-          },
-        });
-      });
+    },
+    account: {
+      // Persist the GitHub OAuth token onto the user's owned org(s) so the CMS
+      // can act on their behalf against the GitHub API. Runs on first link
+      // (create) and on every subsequent GitHub sign-in (update).
+      create: { after: syncGithubAccountToken },
+      update: { after: syncGithubAccountToken },
     },
   },
-  callbacks: {
-    ...authConfig.callbacks,
-    async jwt({ token, user, account }) {
-      if (user?.id) {
-        token.id = user.id;
-      }
-
-      if (account?.provider === "github" && account.access_token) {
-        token.githubAccessToken = account.access_token;
-      } else if (token.id && !token.githubAccessToken) {
-        const githubAccount = await prisma.account.findFirst({
-          where: { userId: token.id as string, provider: "github" },
-        });
-
-        if (githubAccount?.access_token) {
-          token.githubAccessToken = githubAccount.access_token;
-        }
-      }
-
-      return token;
-    },
-  },
+  plugins: [nextCookies()],
 });
+
+/**
+ * Returns the current session (`{ user, session }`) or `null`.
+ * Named `auth()` for back-compat with the previous NextAuth server helper, so
+ * existing `const session = await auth()` call sites keep working.
+ */
+export async function auth() {
+  return authInstance.api.getSession({ headers: await headers() });
+}

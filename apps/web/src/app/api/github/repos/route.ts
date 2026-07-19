@@ -1,17 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { listUserRepos } from "@/lib/github";
-import { prisma } from "@thunder/database";
-
-async function getGithubToken(userId: string, sessionToken?: string) {
-  if (sessionToken) return sessionToken;
-
-  const account = await prisma.account.findFirst({
-    where: { userId, provider: "github" },
-  });
-
-  return account?.access_token ?? null;
-}
+import { getGithubTokenForUser } from "@/lib/github-token";
 
 export async function GET() {
   const session = await auth();
@@ -20,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const token = await getGithubToken(session.user.id, session.githubAccessToken);
+  const token = await getGithubTokenForUser(session.user.id);
 
   if (!token) {
     return NextResponse.json(

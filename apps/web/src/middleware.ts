@@ -1,14 +1,17 @@
-import NextAuth from "next-auth";
-import { authConfig } from "@/lib/auth.config";
+import { NextResponse, type NextRequest } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
-const { auth } = NextAuth(authConfig);
+export function middleware(request: NextRequest) {
+  // Optimistic cookie check (edge-safe, no DB call). Full session validation
+  // still happens in the dashboard layout / server components.
+  const sessionCookie = getSessionCookie(request);
 
-export default auth((req) => {
-  if (!req.auth) {
-    const login = new URL("/login", req.nextUrl.origin);
-    return Response.redirect(login);
+  if (!sessionCookie) {
+    return NextResponse.redirect(new URL("/login", request.nextUrl.origin));
   }
-});
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: ["/dashboard/:path*"],

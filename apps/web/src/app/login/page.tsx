@@ -12,26 +12,41 @@ const highlights = [
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen">
-      {/* Brand panel */}
-      <div className="hidden w-[45%] flex-col justify-between bg-gradient-to-br from-thunder-700 via-thunder-800 to-[#001a4d] p-12 lg:flex">
-        <Logo size="lg" className="[&_span]:text-white [&_span:last-child]:text-thunder-200" />
+    <div className="flex min-h-dvh">
+      <div className="relative hidden w-[44%] flex-col justify-between overflow-hidden bg-[#0c0c0e] p-12 lg:flex">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(242,241,239,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(242,241,239,0.04) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_30%_40%,rgba(196,92,38,0.28),transparent_60%)]"
+          aria-hidden
+        />
 
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
-            Content management,
+        <div className="relative">
+          <Logo light size="lg" />
+        </div>
+
+        <div className="relative">
+          <h1 className="font-display text-4xl tracking-tight text-white">
+            Content in Git.
             <br />
-            reimagined.
+            Editing for everyone.
           </h1>
-          <p className="mt-4 max-w-sm text-base leading-relaxed text-thunder-200">
-            Give your team a beautiful editing experience without leaving Git.
+          <p className="mt-4 max-w-sm text-base leading-relaxed text-white/50">
+            Give your team a calm editing surface without leaving the repository.
           </p>
 
-          <ul className="mt-10 space-y-4">
+          <ul className="mt-10 space-y-3">
             {highlights.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3 text-sm text-thunder-100">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
-                  <Icon className="h-4 w-4 text-white" />
+              <li key={text} className="flex items-center gap-3 text-sm text-white/70">
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white/8">
+                  <Icon className="h-4 w-4 text-thunder-400" />
                 </div>
                 {text}
               </li>
@@ -39,12 +54,11 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <p className="text-xs text-thunder-300">
-          Trusted by teams building with Astro, Next.js, Hugo, and more.
+        <p className="relative text-xs text-white/35">
+          Works with Astro, Next.js, Hugo, Eleventy, and more.
         </p>
       </div>
 
-      {/* Form panel */}
       <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-12">
         <div className="mb-8 lg:hidden">
           <Logo size="lg" />

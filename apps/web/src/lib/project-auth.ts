@@ -1,8 +1,10 @@
 import type { Membership, Project } from "@thunder/database";
-import type { Session } from "next-auth";
 import { auth } from "@/lib/auth";
 import { resolveOrgGithubToken } from "@/lib/org-github";
 import { prisma } from "@thunder/database";
+
+// The non-null session shape returned by our better-auth `auth()` helper.
+type Session = NonNullable<Awaited<ReturnType<typeof auth>>>;
 
 export { getGithubTokenForUser } from "@/lib/github-token";
 

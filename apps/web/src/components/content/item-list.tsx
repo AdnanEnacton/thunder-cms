@@ -23,10 +23,10 @@ const ROW_VARIANTS = [
     active: "ring-thunder-200 dark:ring-thunder-500/30",
   },
   {
-    bar: "bg-violet-500",
-    bg: "bg-violet-50/80 hover:bg-violet-50 dark:bg-violet-500/10 dark:hover:bg-violet-500/15",
-    badge: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
-    active: "ring-violet-200 dark:ring-violet-500/30",
+    bar: "bg-stone-500",
+    bg: "bg-stone-100/80 hover:bg-stone-100 dark:bg-stone-500/10 dark:hover:bg-stone-500/15",
+    badge: "bg-stone-200 text-stone-700 dark:bg-stone-500/15 dark:text-stone-300",
+    active: "ring-stone-300 dark:ring-stone-500/30",
   },
   {
     bar: "bg-emerald-500",

@@ -108,7 +108,7 @@ export function BranchSelector({ projectId }: BranchSelectorProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted">
+      <div className="flex items-center gap-2 px-0.5 py-1 text-[11px] text-muted">
         <Loader2 className="h-3 w-3 animate-spin" />
         Loading branch…
       </div>
@@ -116,71 +116,69 @@ export function BranchSelector({ projectId }: BranchSelectorProps) {
   }
 
   return (
-    <div className="border-b border-border px-3 pb-3">
-      <div className="relative" ref={ref}>
-        <button
-          type="button"
-          onClick={() => canManage && setOpen(!open)}
-          disabled={!canManage}
-          className={cn(
-            "flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface-subtle px-3 py-2 text-left text-xs font-medium transition-all",
-            canManage && "hover:border-thunder-300/50 hover:bg-surface-overlay",
-            !canManage && "cursor-default opacity-90",
-          )}
-          title={canManage ? "Switch target branch" : "Only owners can switch branches"}
-        >
-          <div className="flex min-w-0 items-center gap-2">
-            <GitBranch className="h-3.5 w-3.5 shrink-0 text-muted" />
-            <span className="truncate font-semibold text-foreground">{target || defaultBranch}</span>
-            {target && target !== defaultBranch && (
-              <span className="badge badge-warning shrink-0">staging</span>
-            )}
-          </div>
-        </button>
-
-        {open && canManage && (
-          <div className="dropdown-menu absolute left-0 right-0 z-50 mt-1.5 max-h-72 overflow-y-auto">
-            <div className="dropdown-label">Switch branch</div>
-            <div className="space-y-0.5">
-              {branches.map((b) => (
-                <button
-                  key={b.name}
-                  type="button"
-                  onClick={() => switchBranch(b.name)}
-                  className="dropdown-item"
-                >
-                  <GitBranch className="h-3.5 w-3.5 text-muted" />
-                  <span className="truncate">{b.name}</span>
-                  {b.isDefault && <span className="ml-auto text-[10px] text-muted">default</span>}
-                  {b.name === target && <Check className="h-3 w-3 text-thunder-600" />}
-                </button>
-              ))}
-            </div>
-            <div className="my-1 border-t border-border" />
-            <div className="flex items-center gap-1.5 px-1 py-1">
-              <input
-                value={newBranch}
-                onChange={(e) => setNewBranch(e.target.value)}
-                placeholder="new-branch-name"
-                className="min-w-0 flex-1 rounded-md border border-border bg-surface-subtle px-2 py-1 text-xs outline-none focus:border-thunder-400"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newBranch.trim()) createBranch();
-                }}
-              />
-              <button
-                type="button"
-                onClick={createBranch}
-                disabled={!newBranch.trim() || switching}
-                className="flex shrink-0 items-center gap-1 rounded-md bg-thunder-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
-              >
-                <Plus className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => canManage && setOpen(!open)}
+        disabled={!canManage}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface-subtle px-2.5 py-1.5 text-left text-[11px] font-medium transition-all",
+          canManage && "hover:border-thunder-300/50 hover:bg-surface-overlay",
+          !canManage && "cursor-default opacity-90",
         )}
-      </div>
+        title={canManage ? "Switch target branch" : "Only owners can switch branches"}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <GitBranch className="h-3 w-3 shrink-0 text-muted" />
+          <span className="truncate font-semibold text-foreground">{target || defaultBranch}</span>
+          {target && target !== defaultBranch && (
+            <span className="badge badge-warning shrink-0">staging</span>
+          )}
+        </div>
+      </button>
 
-      {error && <p className="mt-1.5 text-xs text-destructive">{error}</p>}
+      {open && canManage && (
+        <div className="dropdown-menu absolute left-0 right-0 z-50 mt-1 max-h-72 overflow-y-auto">
+          <div className="dropdown-label">Switch branch</div>
+          <div className="space-y-0.5">
+            {branches.map((b) => (
+              <button
+                key={b.name}
+                type="button"
+                onClick={() => switchBranch(b.name)}
+                className="dropdown-item"
+              >
+                <GitBranch className="h-3.5 w-3.5 text-muted" />
+                <span className="truncate">{b.name}</span>
+                {b.isDefault && <span className="ml-auto text-[10px] text-muted">default</span>}
+                {b.name === target && <Check className="h-3 w-3 text-thunder-600" />}
+              </button>
+            ))}
+          </div>
+          <div className="my-1 border-t border-border" />
+          <div className="flex items-center gap-1.5 px-1 py-1">
+            <input
+              value={newBranch}
+              onChange={(e) => setNewBranch(e.target.value)}
+              placeholder="new-branch-name"
+              className="min-w-0 flex-1 rounded-md border border-border bg-surface-subtle px-2 py-1 text-xs outline-none focus:border-thunder-400"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newBranch.trim()) createBranch();
+              }}
+            />
+            <button
+              type="button"
+              onClick={createBranch}
+              disabled={!newBranch.trim() || switching}
+              className="flex shrink-0 items-center gap-1 rounded-md bg-thunder-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="mt-1 text-[11px] text-destructive">{error}</p>}
     </div>
   );
 }

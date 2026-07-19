@@ -17,7 +17,7 @@ interface Props {
 
 export function ProjectSubpageLayout({ projectId, projectName, user, children }: Props) {
   return (
-    <div className="flex h-screen">
+    <div className="flex h-dvh overflow-hidden">
       <ProjectSidebar
         projectId={projectId}
         projectName={projectName}
@@ -31,7 +31,7 @@ export function ProjectSubpageLayout({ projectId, projectName, user, children }:
         onConfigSelect={() => {}}
         user={user}
       />
-      <main className="flex-1 overflow-auto bg-surface">{children}</main>
+      <main className="min-h-0 min-w-0 flex-1 overflow-auto bg-surface">{children}</main>
     </div>
   );
 }

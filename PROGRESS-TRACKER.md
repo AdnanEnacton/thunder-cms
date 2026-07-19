@@ -33,11 +33,11 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 | 0.6 | Auto-create org on register / first GitHub login | `[x]` | `register/route.ts`, `auth.ts` |
 | 0.7 | Dashboard shell + sidebar + landing page | `[x]` | `dashboard-layout-client.tsx`, `dashboard-sidebar.tsx`, `app/dashboard/page.tsx`, `app/page.tsx` |
 | 0.8 | **Dark mode** | `[x]` | Implemented: `@custom-variant dark` + dark CSS-variable overrides in `globals.css`, no-flash script in `app/layout.tsx`, `ThemeToggle` in both sidebar headers (persists to localStorage). |
-| 0.9 | PostgreSQL | `[~]` | **Dev uses SQLite** (`schema.prisma` provider = sqlite). Plan called for Postgres. OK for dev; migrate before multi-tenant prod. |
+| 0.9 | PostgreSQL | `[x]` | **Migrated to PostgreSQL (Neon).** `schema.prisma` provider = postgresql; auth via better-auth. |
 
 ### Phase 0 pending
 - [x] **P0-A** Implement dark mode (theme tokens + toggle + persist), OR remove the dark-mode claim from README. — **Done.** Toggle in sidebar header; dark palette via CSS-variable overrides.
-- [ ] **P0-B** (Prod only) Migrate SQLite → PostgreSQL. Also add token encryption (currently `Organization.githubAccessToken` + `Account.access_token` are plaintext).
+- [x] **P0-B** Migrate SQLite → PostgreSQL (Neon) — **Done.** Also migrated Auth.js → better-auth. Token encryption added: `Account` OAuth tokens via better-auth `encryptOAuthTokens`; `Organization.githubAccessToken` via `lib/token-crypto` (symmetric, keyed by `BETTER_AUTH_SECRET`). Both encrypted at rest.
 
 ---
 
@@ -192,5 +192,6 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 | 2026-07-02 | opencode | **Phase 4 complete.** P4-A custom commit messages; P4-B branch targeting (targetBranch column + getProjectBranch + BranchSelector); P4-C PR creation; P4-D version history/rollback; P4-E live preview iframe (previewUrl column); P4-F Cmd+K command palette + search API; P4-G BYOK OpenAI AI assistant. New routes: projects/[id] GET+PATCH, branches, pulls, search, entry/history, entry/restore. Schema: +targetBranch, +previewUrl. Dev server stopped to run migration. `tsc --noEmit` + `next build` pass. |
 | 2026-07-11 | claude | **P3-D + P3-E + P2-B done.** P3-D SMTP invites (`lib/email.ts` via nodemailer; `SMTP_*`/`EMAIL_FROM` in `.env.example`; `team/route.ts` sends + returns `emailSent`; copy-link fallback kept). P3-E conflict UX (PUT returns distinct `409 {conflict}`; `ConflictDialog` with Reload/Overwrite/Keep editing; overwrite refetches latest SHA). P2-B pagination (`entries/route.ts` `offset`/`limit`+`total`/`hasMore`; Load-more UI). `tsc --noEmit` + `next build` pass. PR creation & i18n remain out of scope per user (deploy handled by GitHub Actions on `editor`). |
 | 2026-07-02 | opencode | **Removed PR creation (P4-C) per user** — no Open PR button/modal; deleted `pulls/route.ts` + `createPullRequest`. Branch targeting kept. Also fixed staging-content bug: `entries/route.ts` was fetching file contents from `project.defaultBranch` (line 63) instead of the target branch — now uses `branch` consistently. Added diagnostics to `collections/route.ts` (returns `scannedBranch` + `treeFileCount` + real error message) to help diagnose "No collections found" on staging. |
+| 2026-07-12 | composer | **Full UI redesign (visual only).** Ink+Ember tokens (ember accent replaces blue); Outfit + Instrument Serif fonts; denser sidebars with `h-dvh`/`min-h-0` scroll chain (content area reclaim); dropped redundant Dashboard/Settings from project sidebar; brand-led landing with grid/glow motion; auth panels restyled. No functionality changes. `next build` pass. |
 
 > **Append a row here every time this file is edited** (see `AGENTS.md`).

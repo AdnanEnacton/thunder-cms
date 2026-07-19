@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import {
   FolderGit2,
   LayoutDashboard,
@@ -92,32 +92,32 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
       : "?";
 
   return (
-    <aside className="flex h-screen w-[260px] shrink-0 flex-col border-r border-border bg-surface-raised">
-      <div className="flex h-14 items-center justify-between px-5">
+    <aside className="flex h-dvh w-[240px] shrink-0 flex-col border-r border-border bg-surface-raised">
+      <div className="flex h-12 shrink-0 items-center justify-between px-3">
         <Link href="/dashboard" className="transition-opacity hover:opacity-80">
           <Logo />
         </Link>
         <ThemeToggle />
       </div>
 
-      <div className="px-3 pb-3" ref={projectRef}>
+      <div className="shrink-0 px-2.5 pb-2" ref={projectRef}>
         <div className="relative">
           <button
             type="button"
             onClick={() => setIsProjectOpen(!isProjectOpen)}
-            className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface-subtle px-3 py-2.5 text-left text-sm font-medium transition-all hover:border-thunder-300/50 hover:bg-surface-overlay focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
+            className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface-subtle px-2.5 py-2 text-left text-[13px] font-medium transition-all hover:border-thunder-300/50 hover:bg-surface-overlay focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
           >
             <div className="flex min-w-0 items-center gap-2">
-              <FolderGit2 className="h-4 w-4 shrink-0 text-muted" />
+              <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-muted" />
               <span className="truncate font-semibold text-foreground">
                 {currentProject ? currentProject.name : "Select project"}
               </span>
             </div>
-            <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted" />
+            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted" />
           </button>
 
           {isProjectOpen && (
-            <div className="dropdown-menu absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto">
+            <div className="dropdown-menu absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto">
               <div className="dropdown-label">Switch project</div>
               {projects.length === 0 ? (
                 <div className="px-3 py-2 text-xs text-muted">No projects connected</div>
@@ -153,7 +153,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-3 py-2">
+      <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2.5 py-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = item.exact
@@ -178,21 +178,21 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-border p-3" ref={profileRef}>
+      <div className="shrink-0 border-t border-border p-2.5" ref={profileRef}>
         <div className="relative">
           <button
             type="button"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-surface-overlay focus:outline-none"
+            className="flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-surface-overlay focus:outline-none"
           >
             {user?.image ? (
               <img
                 src={user.image}
                 alt={user.name || "User Avatar"}
-                className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-border"
+                className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-border"
               />
             ) : (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-thunder-100 text-xs font-semibold text-thunder-700">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-thunder-100 text-[11px] font-semibold text-thunder-700">
                 {userInitial}
               </div>
             )}
@@ -200,13 +200,13 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
               <p className="truncate text-xs font-semibold text-foreground">
                 {user?.name || "My Workspace"}
               </p>
-              <p className="truncate text-[11px] text-muted">{user?.email || "No email"}</p>
+              <p className="truncate text-[10px] text-muted">{user?.email || "No email"}</p>
             </div>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" />
           </button>
 
           {isProfileOpen && (
-            <div className="dropdown-menu absolute bottom-full left-0 right-0 z-50 mb-1.5">
+            <div className="dropdown-menu absolute bottom-full left-0 right-0 z-50 mb-1">
               <div className="dropdown-label">Account</div>
               <Link
                 href="/dashboard/settings"
@@ -219,7 +219,10 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
               <div className="my-1 border-t border-border" />
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={async () => {
+                  await authClient.signOut();
+                  window.location.href = "/";
+                }}
                 className="dropdown-item w-full font-medium text-destructive hover:bg-destructive/5"
               >
                 <LogOut className="h-3.5 w-3.5" />

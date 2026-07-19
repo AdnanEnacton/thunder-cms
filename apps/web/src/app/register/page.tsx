@@ -13,38 +13,52 @@ const perks = [
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-screen">
-      {/* Brand panel */}
-      <div className="hidden w-[45%] flex-col justify-between bg-gradient-to-br from-thunder-700 via-thunder-800 to-[#001a4d] p-12 lg:flex">
-        <Logo size="lg" className="[&_span]:text-white [&_span:last-child]:text-thunder-200" />
+    <div className="flex min-h-dvh">
+      <div className="relative hidden w-[44%] flex-col justify-between overflow-hidden bg-[#0c0c0e] p-12 lg:flex">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(242,241,239,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(242,241,239,0.04) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_70%_30%,rgba(196,92,38,0.28),transparent_60%)]"
+          aria-hidden
+        />
 
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">
+        <div className="relative">
+          <Logo light size="lg" />
+        </div>
+
+        <div className="relative">
+          <h1 className="font-display text-4xl tracking-tight text-white">
             Start editing
             <br />
             in minutes.
           </h1>
-          <p className="mt-4 max-w-sm text-base leading-relaxed text-thunder-200">
-            Create your account and connect your first repository. Setup takes less than five
+          <p className="mt-4 max-w-sm text-base leading-relaxed text-white/50">
+            Create an account, connect a repository, and open the editor. Setup stays under five
             minutes.
           </p>
 
           <ul className="mt-10 space-y-3">
             {perks.map((perk) => (
-              <li key={perk} className="flex items-center gap-3 text-sm text-thunder-100">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-thunder-300" />
+              <li key={perk} className="flex items-center gap-3 text-sm text-white/70">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-thunder-400" />
                 {perk}
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="text-xs text-thunder-300">
-          Free to get started. Your content always stays in your repository.
+        <p className="relative text-xs text-white/35">
+          Free to start. Your content always stays in your repository.
         </p>
       </div>
 
-      {/* Form panel */}
       <div className="flex flex-1 flex-col items-center justify-center bg-surface px-6 py-12">
         <div className="mb-8 lg:hidden">
           <Logo size="lg" />

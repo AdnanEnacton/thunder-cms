@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import {
   ImageIcon,
   FolderGit2,
@@ -13,7 +13,6 @@ import {
   User as UserIcon,
   ChevronDown,
   ChevronRight,
-  LayoutDashboard,
   FileText,
   Settings,
   Folder,
@@ -67,8 +66,6 @@ interface ProjectSidebarProps {
   onCollectionSelect: (collection: SidebarCollection) => void;
   onConfigSelect?: (path: string) => void;
   user?: User;
-  
-  // Custom tree props
   entries?: ContentEntrySummary[];
   selectedEntryPath?: string | null;
   onEntrySelect?: (path: string) => void;
@@ -98,8 +95,6 @@ export function ProjectSidebar({
   const [projects, setProjects] = useState<Project[]>([]);
   const [isProjectOpen, setIsProjectOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  
-  // Accordions expanded states
   const [isContentExpanded, setIsContentExpanded] = useState(true);
   const [isConfigsExpanded, setIsConfigsExpanded] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -109,7 +104,6 @@ export function ProjectSidebar({
   const profileRef = useRef<HTMLDivElement>(null);
   const entriesDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch projects on mount for the switcher
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -125,7 +119,6 @@ export function ProjectSidebar({
     fetchProjects();
   }, []);
 
-  // Click outside handling
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (projectRef.current && !projectRef.current.contains(event.target as Node)) {
@@ -146,7 +139,6 @@ export function ProjectSidebar({
     setOpenEntriesDropdown(null);
   }, [activeCollectionId, selectedEntryPath]);
 
-  // Auto-expand collection group on activeCollectionId change
   useEffect(() => {
     if (activeCollectionId && collections.length > 0) {
       const activeCollection = collections.find((c) => c.id === activeCollectionId);
@@ -159,17 +151,18 @@ export function ProjectSidebar({
     }
   }, [activeCollectionId, collections]);
 
-  // Extract current project ID from pathname
   const currentProjectId = activePath.match(/\/dashboard\/projects\/([^\/]+)/)?.[1];
 
-  const handleProjectSelect = (projectId: string) => {
+  const handleProjectSelect = (selectedId: string) => {
     setIsProjectOpen(false);
-    router.push(`/dashboard/projects/${projectId}`);
+    router.push(`/dashboard/projects/${selectedId}`);
   };
 
   const userInitial = user?.name
     ? user.name.charAt(0).toUpperCase()
-    : (user?.email ? user.email.charAt(0).toUpperCase() : "?");
+    : user?.email
+      ? user.email.charAt(0).toUpperCase()
+      : "?";
 
   const toggleGroup = (groupKey: string) => {
     setExpandedGroups((prev) => ({
@@ -179,39 +172,30 @@ export function ProjectSidebar({
   };
 
   return (
-    <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-border bg-surface-raised">
-      <div className="flex h-14 items-center justify-between px-5">
+    <aside className="flex h-full min-h-0 w-[240px] shrink-0 flex-col border-r border-border bg-surface-raised">
+      <div className="flex h-12 shrink-0 items-center justify-between px-3">
         <Link href="/dashboard" className="transition-opacity hover:opacity-80">
           <Logo />
         </Link>
         <ThemeToggle />
       </div>
 
-      <div className="border-b border-border px-3 pb-3" ref={projectRef}>
+      <div className="shrink-0 space-y-1.5 border-b border-border px-2.5 pb-2" ref={projectRef}>
         <div className="relative">
           <button
             type="button"
             onClick={() => setIsProjectOpen(!isProjectOpen)}
-            className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-surface-subtle px-3 py-2.5 text-left text-sm font-medium transition-all hover:border-thunder-300/50 hover:bg-surface-overlay focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
+            className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-surface-subtle px-2.5 py-1.5 text-left text-[13px] font-medium transition-all hover:border-thunder-300/50 hover:bg-surface-overlay focus:outline-none focus:ring-2 focus:ring-thunder-500/20"
           >
             <div className="flex min-w-0 items-center gap-2">
-              <FolderGit2 className="h-4 w-4 shrink-0 text-muted" />
+              <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-muted" />
               <span className="truncate font-semibold text-foreground">{projectName}</span>
             </div>
-            <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted" />
+            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-muted" />
           </button>
 
           {isProjectOpen && (
-            <div className="dropdown-menu absolute left-0 right-0 z-50 mt-1.5 max-h-60 overflow-y-auto">
-              <Link
-                href="/dashboard"
-                onClick={() => setIsProjectOpen(false)}
-                className="dropdown-item font-semibold"
-              >
-                <LayoutDashboard className="h-3.5 w-3.5 text-muted" />
-                Back to dashboard
-              </Link>
-              <div className="my-1 border-t border-border" />
+            <div className="dropdown-menu absolute left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto">
               <div className="dropdown-label">Switch project</div>
               {projects.length === 0 ? (
                 <div className="px-3 py-2 text-xs text-muted">No other projects</div>
@@ -245,77 +229,30 @@ export function ProjectSidebar({
             </div>
           )}
         </div>
+
+        <BranchSelector projectId={projectId} />
       </div>
 
-      <BranchSelector projectId={projectId} />
-
-      <nav className="space-y-0.5 border-b border-border p-3">
-        <Link href="/dashboard" className="nav-item">
-          <LayoutDashboard className="h-4 w-4 shrink-0 text-muted" />
-          Dashboard
-        </Link>
-        <Link href="/dashboard/settings" className="nav-item">
-          <Settings className="h-4 w-4 shrink-0 text-muted" />
-          Settings
-        </Link>
-        <SidebarNavButton
-          active={view === "media"}
-          icon={<ImageIcon className="h-4 w-4" />}
-          label="Media library"
-          onClick={() => onViewChange("media")}
-        />
-        <Link
-          href={`/dashboard/projects/${projectId}/team`}
-          className={cn(
-            "nav-item",
-            activePath === `/dashboard/projects/${projectId}/team` && "nav-item-active",
-          )}
-        >
-          <Users className="h-4 w-4 shrink-0 text-muted" />
-          Team
-        </Link>
-        <Link
-          href={`/dashboard/projects/${projectId}/activity`}
-          className={cn(
-            "nav-item",
-            activePath === `/dashboard/projects/${projectId}/activity` && "nav-item-active",
-          )}
-        >
-          <Activity className="h-4 w-4 shrink-0 text-muted" />
-          Activity
-        </Link>
-        <Link
-          href={`/dashboard/projects/${projectId}/settings`}
-          className={cn(
-            "nav-item",
-            activePath === `/dashboard/projects/${projectId}/settings` && "nav-item-active",
-          )}
-        >
-          <Settings className="h-4 w-4 shrink-0 text-muted" />
-          Project settings
-        </Link>
-      </nav>
-
-      <div className="flex-1 space-y-5 overflow-auto p-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-2.5 py-2">
         <div>
           <button
             type="button"
             onClick={() => setIsContentExpanded(!isContentExpanded)}
-            className="dropdown-label flex w-full items-center justify-between px-2 pb-2 hover:text-muted"
+            className="dropdown-label flex w-full items-center justify-between px-1.5 pb-1.5 hover:text-muted"
           >
             <span>Content</span>
             {isContentExpanded ? (
-              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+              <ChevronDown className="h-3 w-3 shrink-0" />
             ) : (
-              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+              <ChevronRight className="h-3 w-3 shrink-0" />
             )}
           </button>
 
-          {isContentExpanded && (
-            contentRoots.length === 0 ? (
-              <p className="px-2 py-2 text-xs italic text-muted">No collections found</p>
+          {isContentExpanded &&
+            (contentRoots.length === 0 ? (
+              <p className="px-1.5 py-1.5 text-xs italic text-muted">No collections found</p>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {contentRoots.map((root) => (
                   <CollectionGroup
                     key={root.key}
@@ -335,29 +272,28 @@ export function ProjectSidebar({
                   />
                 ))}
               </div>
-            )
-          )}
+            ))}
         </div>
 
         <div>
           <button
             type="button"
             onClick={() => setIsConfigsExpanded(!isConfigsExpanded)}
-            className="dropdown-label flex w-full items-center justify-between px-2 pb-2 hover:text-muted"
+            className="dropdown-label flex w-full items-center justify-between px-1.5 pb-1.5 hover:text-muted"
           >
             <span>Config files</span>
             {isConfigsExpanded ? (
-              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+              <ChevronDown className="h-3 w-3 shrink-0" />
             ) : (
-              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+              <ChevronRight className="h-3 w-3 shrink-0" />
             )}
           </button>
 
-          {isConfigsExpanded && (
-            configLoading ? (
-              <p className="px-2 py-2 text-xs text-muted">Loading...</p>
+          {isConfigsExpanded &&
+            (configLoading ? (
+              <p className="px-1.5 py-1.5 text-xs text-muted">Loading...</p>
             ) : configFiles.length === 0 ? (
-              <p className="px-2 py-2 text-xs italic text-muted">No config files</p>
+              <p className="px-1.5 py-1.5 text-xs italic text-muted">No config files</p>
             ) : (
               <div className="space-y-0.5">
                 {configFiles.map((file) => (
@@ -374,26 +310,64 @@ export function ProjectSidebar({
                   </button>
                 ))}
               </div>
-            )
-          )}
+            ))}
         </div>
       </div>
 
-      <div className="border-t border-border p-3" ref={profileRef}>
+      <nav className="shrink-0 space-y-0.5 border-t border-border px-2.5 py-2">
+        <SidebarNavButton
+          active={view === "media"}
+          icon={<ImageIcon className="h-3.5 w-3.5" />}
+          label="Media library"
+          onClick={() => onViewChange("media")}
+        />
+        <Link
+          href={`/dashboard/projects/${projectId}/team`}
+          className={cn(
+            "nav-item",
+            activePath === `/dashboard/projects/${projectId}/team` && "nav-item-active",
+          )}
+        >
+          <Users className="h-3.5 w-3.5 shrink-0 text-muted" />
+          Team
+        </Link>
+        <Link
+          href={`/dashboard/projects/${projectId}/activity`}
+          className={cn(
+            "nav-item",
+            activePath === `/dashboard/projects/${projectId}/activity` && "nav-item-active",
+          )}
+        >
+          <Activity className="h-3.5 w-3.5 shrink-0 text-muted" />
+          Activity
+        </Link>
+        <Link
+          href={`/dashboard/projects/${projectId}/settings`}
+          className={cn(
+            "nav-item",
+            activePath === `/dashboard/projects/${projectId}/settings` && "nav-item-active",
+          )}
+        >
+          <Settings className="h-3.5 w-3.5 shrink-0 text-muted" />
+          Project settings
+        </Link>
+      </nav>
+
+      <div className="shrink-0 border-t border-border p-2.5" ref={profileRef}>
         <div className="relative">
           <button
             type="button"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-surface-overlay focus:outline-none"
+            className="flex w-full items-center gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-surface-overlay focus:outline-none"
           >
             {user?.image ? (
               <img
                 src={user.image}
                 alt={user.name || "User Avatar"}
-                className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-border"
+                className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-border"
               />
             ) : (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-thunder-100 text-xs font-semibold text-thunder-700">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-thunder-100 text-[11px] font-semibold text-thunder-700">
                 {userInitial}
               </div>
             )}
@@ -401,13 +375,13 @@ export function ProjectSidebar({
               <p className="truncate text-xs font-semibold text-foreground">
                 {user?.name || "My Workspace"}
               </p>
-              <p className="truncate text-[11px] text-muted">{user?.email || "No email"}</p>
+              <p className="truncate text-[10px] text-muted">{user?.email || "No email"}</p>
             </div>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" />
           </button>
 
           {isProfileOpen && (
-            <div className="dropdown-menu absolute bottom-full left-0 right-0 z-50 mb-1.5">
+            <div className="dropdown-menu absolute bottom-full left-0 right-0 z-50 mb-1">
               <div className="dropdown-label">Account</div>
               <Link
                 href="/dashboard/settings"
@@ -420,7 +394,10 @@ export function ProjectSidebar({
               <div className="my-1 border-t border-border" />
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={async () => {
+                  await authClient.signOut();
+                  window.location.href = "/";
+                }}
                 className="dropdown-item w-full font-medium text-destructive hover:bg-destructive/5"
               >
                 <LogOut className="h-3.5 w-3.5" />
@@ -510,21 +487,21 @@ function CollectionGroup({
       >
         <div className="flex items-center gap-2">
           {isGroupExpanded ? (
-            <FolderOpen className="h-4 w-4 shrink-0 text-muted" />
+            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted" />
           ) : (
-            <Folder className="h-4 w-4 shrink-0 text-muted" />
+            <Folder className="h-3.5 w-3.5 shrink-0 text-muted" />
           )}
           <span className="truncate">{root.label}</span>
         </div>
         {isGroupExpanded ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted" />
+          <ChevronDown className="h-3 w-3 shrink-0 text-muted" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted" />
+          <ChevronRight className="h-3 w-3 shrink-0 text-muted" />
         )}
       </button>
 
       {isGroupExpanded && (
-        <div className="ml-5 mt-0.5 space-y-0.5 border-l border-border pl-3">
+        <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-2.5">
           {root.locales.map((locale) => {
             const isActive = view === "content" && activeCollectionId === locale.id;
 
@@ -582,7 +559,7 @@ function SidebarItem({
       onClick={onClick}
       className={cn(
         "nav-item w-full capitalize",
-        indent && "pl-7",
+        indent && "pl-6",
         active && "nav-item-active",
       )}
     >
@@ -615,14 +592,14 @@ function SidebarEntriesDropdown({
 
   return (
     <div
-      className={cn("relative", indented ? "ml-0" : "ml-5 border-l border-border pl-3")}
+      className={cn("relative", indented ? "ml-0" : "ml-4 border-l border-border pl-2.5")}
       ref={isOpen ? dropdownRef : undefined}
     >
       <button
         type="button"
         onClick={onToggle}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm font-medium transition-all",
+          "flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-left text-[13px] font-medium transition-all",
           isOpen
             ? "border-thunder-300 bg-thunder-50 text-thunder-700 shadow-xs"
             : "border-border bg-surface-subtle text-foreground hover:border-thunder-300/50 hover:bg-surface-overlay",
@@ -636,7 +613,7 @@ function SidebarEntriesDropdown({
           <span className="text-[10px] font-medium text-muted">{entries.length}</span>
           <ChevronDown
             className={cn(
-              "h-3.5 w-3.5 text-muted transition-transform",
+              "h-3 w-3 text-muted transition-transform",
               isOpen && "rotate-180",
             )}
           />
@@ -645,7 +622,9 @@ function SidebarEntriesDropdown({
 
       {isOpen && (
         <div className="dropdown-menu absolute left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto">
-          <div className="dropdown-label capitalize">{label} · {entries.length} entries</div>
+          <div className="dropdown-label capitalize">
+            {label} · {entries.length} entries
+          </div>
           <div className="space-y-0.5">
             {entries.map((entry) => (
               <button

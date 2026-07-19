@@ -18,7 +18,7 @@ export default async function InvitePage({ params }: Props) {
 
   if (!invitation || invitation.accepted || invitation.expiresAt < new Date()) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface p-4">
+      <div className="flex min-h-dvh items-center justify-center bg-surface p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Invitation invalid</CardTitle>
@@ -36,7 +36,7 @@ export default async function InvitePage({ params }: Props) {
   const emailMatches = session?.user?.email === invitation.email;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface p-4">
+    <div className="flex min-h-dvh items-center justify-center bg-surface p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>You&apos;ve been invited</CardTitle>

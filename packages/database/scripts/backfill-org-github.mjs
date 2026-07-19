@@ -1,42 +1,18 @@
-import { PrismaClient } from "@prisma/client";
+// DEPRECATED — do not run.
+//
+// This script used to copy a GitHub OAuth token from an owner's Account row into
+// Organization.githubAccessToken. That is now handled automatically by the app:
+//   - Account tokens are encrypted at rest (better-auth `encryptOAuthTokens`).
+//   - The `account.create/update` database hook syncs the org token (encrypted
+//     via lib/token-crypto) on every GitHub sign-in.
+//   - lib/org-github.ts `resolveOrgGithubToken()` backfills on demand.
+//
+// Reading Account.accessToken directly here would yield better-auth's enveloped
+// ciphertext, which is NOT compatible with our org-token encryption scheme, so
+// this script has been neutralized to prevent writing corrupt tokens.
 
-const prisma = new PrismaClient();
-
-const orgs = await prisma.organization.findMany({
-  where: { githubAccessToken: null },
-  include: {
-    memberships: {
-      where: { role: "owner" },
-      select: { userId: true },
-    },
-  },
-});
-
-let updated = 0;
-
-for (const org of orgs) {
-  for (const { userId } of org.memberships) {
-    const account = await prisma.account.findFirst({
-      where: { userId, provider: "github" },
-      select: { access_token: true },
-    });
-
-    if (!account?.access_token) continue;
-
-    await prisma.organization.update({
-      where: { id: org.id },
-      data: {
-        githubAccessToken: account.access_token,
-        githubConnectedAt: new Date(),
-        githubConnectedById: userId,
-      },
-    });
-
-    console.log(`Backfilled org "${org.name}" from owner ${userId}`);
-    updated++;
-    break;
-  }
-}
-
-console.log(`Done. Backfilled ${updated} of ${orgs.length} orgs without tokens.`);
-await prisma.$disconnect();
+console.error(
+  "backfill-org-github is deprecated and disabled. Org GitHub tokens are now " +
+    "synced automatically by the app on GitHub sign-in. See lib/org-github.ts.",
+);
+process.exit(1);
