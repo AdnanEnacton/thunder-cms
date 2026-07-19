@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { LoadingState } from "@/components/ui/loading-state";
+import { CommitMessageDialog } from "@/components/content/commit-message-dialog";
 
 interface MediaLibraryProps {
   projectId: string;
@@ -25,6 +26,16 @@ export function MediaLibrary({ projectId }: MediaLibraryProps) {
   const [copiedPath, setCopiedPath] = useState("");
   const [deletePath, setDeletePath] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [commitMessageMode, setCommitMessageMode] = useState<"auto" | "custom">("auto");
+  const [pendingFiles, setPendingFiles] = useState<FileList | null>(null);
+  const [showCommitDialog, setShowCommitDialog] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/projects/${projectId}`)
+      .then((r) => r.json())
+      .then((d) => setCommitMessageMode(d.project?.commitMessageMode ?? "auto"))
+      .catch(() => {});
+  }, [projectId]);
 
   async function loadMedia(selectedFolder = folder) {
     setLoading(true);
@@ -50,16 +61,27 @@ export function MediaLibrary({ projectId }: MediaLibraryProps) {
     loadMedia();
   }, [projectId, folder]);
 
-  async function handleUpload(fileList: FileList | null) {
+  function handleUpload(fileList: FileList | null) {
     if (!fileList?.length) return;
+    if (commitMessageMode === "custom") {
+      setPendingFiles(fileList);
+      setShowCommitDialog(true);
+      return;
+    }
+    doUpload(fileList, null);
+  }
+
+  async function doUpload(fileList: FileList, message: string | null) {
     setUploading(true);
     setError("");
     setSuccess("");
+    setShowCommitDialog(false);
 
     for (const file of Array.from(fileList)) {
       const formData = new FormData();
       formData.append("file", file);
       if (folder) formData.append("folder", folder);
+      if (message) formData.append("message", message);
 
       const response = await fetch(`/api/projects/${projectId}/media`, {
         method: "POST",
@@ -70,11 +92,13 @@ export function MediaLibrary({ projectId }: MediaLibraryProps) {
         const data = await response.json();
         setError(data.error ?? `Failed to upload ${file.name}`);
         setUploading(false);
+        setPendingFiles(null);
         return;
       }
     }
 
     setUploading(false);
+    setPendingFiles(null);
     setSuccess("Upload complete");
     await loadMedia();
   }
@@ -317,6 +341,28 @@ export function MediaLibrary({ projectId }: MediaLibraryProps) {
           setDeletePath(null);
         }}
         onCancel={() => setDeletePath(null)}
+      />
+
+      <CommitMessageDialog
+        open={showCommitDialog}
+        defaultTitle={
+          pendingFiles && pendingFiles.length === 1
+            ? pendingFiles[0].name
+            : `${pendingFiles?.length ?? 0} files`
+        }
+        defaultMessage={
+          pendingFiles && pendingFiles.length === 1
+            ? `Upload: "${pendingFiles[0].name}"`
+            : `Upload ${pendingFiles?.length ?? 0} files`
+        }
+        saving={uploading}
+        onClose={() => {
+          setShowCommitDialog(false);
+          setPendingFiles(null);
+        }}
+        onConfirm={(message) => {
+          if (pendingFiles) doUpload(pendingFiles, message);
+        }}
       />
     </div>
   );

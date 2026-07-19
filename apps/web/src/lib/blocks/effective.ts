@@ -1,5 +1,7 @@
-import type { BlockDef } from "@thunder/types";
+import type { BlockConfigEntry, BlockDef, PageTypeDef } from "@thunder/types";
 import { componentToBlockDef, discoverComponent } from "./discover";
+import { parseThunderConfigSource } from "./resolve-config";
+import { fetchBlockManifest, resolvePackageVersion, type LockfileFile } from "./npm-manifest";
 
 /**
  * Palette category for a component, from its folder relative to the components
@@ -73,4 +75,165 @@ export function mergeEffectiveBlocks(discovered: BlockDef[], overrides: BlockDef
   }
 
   return result;
+}
+
+export interface ConfigResolveDeps {
+  packageJsonSource: string | null;
+  lockfile: LockfileFile | null;
+  readLocalFile: (path: string) => Promise<string | null>;
+  fetchImpl?: typeof fetch;
+}
+
+export interface ConfigDrivenResult {
+  blocks: BlockDef[];
+  pageTypes: PageTypeDef[];
+  warnings: string[];
+}
+
+function extractPackageName(specifier: string): string | null {
+  if (specifier.startsWith("@")) {
+    const parts = specifier.split("/");
+    return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : specifier;
+  }
+  return specifier.split("/")[0] || null;
+}
+
+/**
+ * Resolve blocks for a project from `thunder.config.ts` (npm + config model)
+ * instead of scanning the components folder. Package blocks are filled in from
+ * their published manifest (via `npm-manifest.ts`); local `import.from` blocks
+ * reuse the same prop-discovery as folder-scan; content-only blocks pass
+ * through as-authored. Never throws — resolution failures become `warnings`.
+ */
+export async function resolveConfigDrivenBlocks(
+  thunderConfigSource: string,
+  deps: ConfigResolveDeps,
+): Promise<ConfigDrivenResult> {
+  const { config, issues, unresolvedRefs } = parseThunderConfigSource(thunderConfigSource);
+  const warnings = issues.map((i) => (i.path ? `${i.path}: ${i.message}` : i.message));
+
+  if (!config) {
+    return { blocks: [], pageTypes: [], warnings };
+  }
+
+  const entries: BlockConfigEntry[] = [...config.blocks];
+
+  for (const ref of unresolvedRefs) {
+    const pkg = extractPackageName(ref.importSource);
+    if (!pkg) {
+      warnings.push(
+        `blocks[${ref.index}]: cannot resolve "${ref.localName}" imported from "${ref.importSource}" — expected an npm package specifier`,
+      );
+      continue;
+    }
+    const version = resolvePackageVersion(pkg, deps.packageJsonSource, deps.lockfile);
+    if (!version) {
+      warnings.push(`blocks[${ref.index}]: could not resolve an installed version of "${pkg}" — is it in package.json?`);
+      continue;
+    }
+    const manifest = await fetchBlockManifest(pkg, version, ref.importedName, deps.fetchImpl);
+    if (!manifest) {
+      warnings.push(`blocks[${ref.index}]: no manifest found for "${ref.importedName}" in ${pkg}@${version}`);
+      continue;
+    }
+    const overrides = ref.overrides ?? {};
+    entries.push({
+      key: (overrides.key as string | undefined) ?? ref.importedName,
+      label: (overrides.label as string | undefined) ?? manifest.label,
+      category: (overrides.category as string | undefined) ?? manifest.category,
+      icon: (overrides.icon as string | undefined) ?? manifest.icon,
+      description: (overrides.description as string | undefined) ?? manifest.description,
+      import: { package: pkg, block: ref.importedName },
+      fields: manifest.fields,
+      defaults: overrides.defaults as Record<string, unknown> | undefined,
+      props: overrides.props as Record<string, unknown> | undefined,
+    });
+  }
+
+  const blocks: BlockDef[] = [];
+  for (const entry of entries) {
+    const resolved = await resolveConfigEntry(entry, deps, warnings);
+    if (resolved) blocks.push(resolved);
+  }
+
+  return { blocks, pageTypes: config.pageTypes ?? [], warnings };
+}
+
+async function resolveConfigEntry(
+  entry: BlockConfigEntry,
+  deps: ConfigResolveDeps,
+  warnings: string[],
+): Promise<BlockDef | null> {
+  if (!entry.import) {
+    if (!entry.fields?.length) {
+      warnings.push(`Block "${entry.key}" has no import and no fields — content-only blocks must define fields`);
+    }
+    return {
+      key: entry.key,
+      label: entry.label,
+      category: entry.category,
+      icon: entry.icon,
+      description: entry.description,
+      fields: entry.fields ?? [],
+      source: { kind: "manual" },
+    };
+  }
+
+  if ("package" in entry.import) {
+    const pkg = entry.import.package;
+    const blockKey = entry.import.block;
+    const version = resolvePackageVersion(pkg, deps.packageJsonSource, deps.lockfile);
+    let fields = entry.fields ?? [];
+    let label = entry.label;
+    let category = entry.category;
+    let icon = entry.icon;
+    let description = entry.description;
+
+    if (version) {
+      const manifest = await fetchBlockManifest(pkg, version, blockKey, deps.fetchImpl);
+      if (manifest) {
+        if (!entry.fields?.length) fields = manifest.fields;
+        if (!label || label === entry.key) label = manifest.label;
+        category = category ?? manifest.category;
+        icon = icon ?? manifest.icon;
+        description = description ?? manifest.description;
+      } else {
+        warnings.push(`Block "${entry.key}": no manifest found for "${blockKey}" in ${pkg}@${version}`);
+      }
+    } else {
+      warnings.push(`Block "${entry.key}": could not resolve an installed version of "${pkg}"`);
+    }
+
+    return {
+      key: entry.key,
+      label: label || entry.key,
+      category,
+      icon,
+      description,
+      fields,
+      source: { kind: "package", package: pkg, block: blockKey, version: version ?? undefined },
+    };
+  }
+
+  const file = entry.import.from;
+  let fields = entry.fields ?? [];
+  if (!entry.fields?.length) {
+    const content = await deps.readLocalFile(file);
+    if (content) {
+      const discovered = discoverComponent(file, content, { allowEmpty: true });
+      if (discovered) fields = discovered.fields;
+    } else {
+      warnings.push(`Block "${entry.key}": could not read local component file "${file}"`);
+    }
+  }
+
+  return {
+    key: entry.key,
+    label: entry.label || entry.key,
+    category: entry.category,
+    icon: entry.icon,
+    description: entry.description,
+    fields,
+    source: { kind: "component", file },
+  };
 }

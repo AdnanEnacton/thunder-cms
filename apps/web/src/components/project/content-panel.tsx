@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Blocks, FileText, Plus, Search, Settings2 } from "lucide-react";
 import type { ContentEntrySummary, FieldSchema, PageTypeDef } from "@thunder/types";
 import { PageTypesDialog } from "@/components/content/page-builder/page-types-dialog";
@@ -68,6 +68,19 @@ export function ContentPanel({
   const [draftFilter, setDraftFilter] = useState<"all" | "draft" | "published">("all");
   const [query, setQuery] = useState("");
   const [managePageTypes, setManagePageTypes] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<
+    Record<string, { userName: string; at: string; action: string }>
+  >({});
+
+  useEffect(() => {
+    const paths = entries.map((e) => e.path);
+    if (paths.length === 0) return;
+    const params = new URLSearchParams({ paths: paths.join(",") });
+    fetch(`/api/projects/${projectId}/content/entries/last-updated?${params.toString()}`)
+      .then((r) => r.json())
+      .then((d) => setLastUpdated((prev) => ({ ...prev, ...(d.items ?? {}) })))
+      .catch(() => {});
+  }, [projectId, entries]);
 
   const visibleEntries = useMemo(() => {
     let result = entries;
@@ -92,10 +105,24 @@ export function ContentPanel({
       sorted.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
     } else if (sortBy === "date-asc") {
       sorted.sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+    } else if (sortBy === "updated") {
+      sorted.sort((a, b) => {
+        const bAt = lastUpdated[b.path]?.at ?? "";
+        const aAt = lastUpdated[a.path]?.at ?? "";
+        return bAt.localeCompare(aAt);
+      });
     }
 
     return sorted;
-  }, [entries, draftFilter, query, sortBy]);
+  }, [entries, draftFilter, query, sortBy, lastUpdated]);
+
+  function formatLastUpdated(path: string): string | null {
+    const info = lastUpdated[path];
+    if (!info) return null;
+    const date = new Date(info.at);
+    const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return `${info.userName} · ${dateStr}`;
+  }
 
   const draftCount = entries.filter((e) => e.draft).length;  return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
@@ -299,8 +326,14 @@ export function ContentPanel({
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-3 text-sm text-muted">
-                      {entry.date && (
-                        <span className="hidden sm:inline text-xs">{entry.date.slice(0, 10)}</span>
+                      {formatLastUpdated(entry.path) ? (
+                        <span className="hidden sm:inline text-xs" title="Last updated (from activity log)">
+                          {formatLastUpdated(entry.path)}
+                        </span>
+                      ) : (
+                        entry.date && (
+                          <span className="hidden sm:inline text-xs">{entry.date.slice(0, 10)}</span>
+                        )
                       )}
                       {entry.draft && <span className="badge badge-warning">Draft</span>}
                     </div>

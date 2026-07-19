@@ -58,6 +58,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
   const [showAi, setShowAi] = useState(false);
   const [showConflict, setShowConflict] = useState(false);
   const [resolvingConflict, setResolvingConflict] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<{ userName: string; at: string } | null>(null);
   // Remembers the commit message of the last save attempt so an overwrite
   // (after a conflict) reuses it instead of the default.
   const lastMessageRef = useRef<string | null>(null);
@@ -99,10 +100,24 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
         setBlockDefs(Array.isArray(b.blocks) ? b.blocks : []);
         setPageTypeDefs(Array.isArray(b.pageTypes) ? b.pageTypes : []);
       }
+
+      refreshLastUpdated();
     }
 
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, filePath]);
+
+  async function refreshLastUpdated() {
+    try {
+      const params = new URLSearchParams({ paths: filePath });
+      const res = await fetch(`/api/projects/${projectId}/content/entries/last-updated?${params.toString()}`);
+      const data = await res.json();
+      setLastUpdated(data.items?.[filePath] ?? null);
+    } catch {
+      setLastUpdated(null);
+    }
+  }
 
   function updateField(name: string, value: unknown) {
     setFrontmatter((prev) => ({ ...prev, [name]: value }));
@@ -142,6 +157,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
     if (data.sha) setSha(data.sha);
     setSuccess("Saved successfully");
     setPendingMessage(null);
+    refreshLastUpdated();
     router.refresh();
     return true;
   }
@@ -259,7 +275,15 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           )}
           <div className="min-w-0 border-l border-border pl-3">
             <p className="truncate text-sm font-semibold tracking-tight">{entryTitle}</p>
-            <p className="truncate font-mono text-[11px] text-muted">{filePath}</p>
+            <p className="truncate font-mono text-[11px] text-muted">
+              {filePath}
+              {lastUpdated && (
+                <span className="ml-2 font-sans text-muted-foreground">
+                  · Updated by {lastUpdated.userName} on{" "}
+                  {new Date(lastUpdated.at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              )}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">

@@ -18,7 +18,7 @@ export default async function ProjectsPage() {
     },
   });
 
-  const projects = memberships.flatMap((m: any) => m.organization.projects);
+  const projects = memberships.flatMap((m) => m.organization.projects);
 
   return (
     <div className="space-y-8">

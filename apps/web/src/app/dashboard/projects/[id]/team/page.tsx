@@ -54,8 +54,11 @@ export default async function TeamPage({ params }: Props) {
           projectId={id}
           currentUserId={session.user.id}
           isOwner={isOwner}
-          initialMembers={memberships as any}
-          initialInvitations={invitations as any}
+          initialMembers={memberships}
+          initialInvitations={invitations.map((inv) => ({
+            ...inv,
+            expiresAt: inv.expiresAt.toISOString(),
+          }))}
         />
       </div>
     </ProjectSubpageLayout>

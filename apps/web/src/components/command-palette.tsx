@@ -168,8 +168,6 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, allItems, active]);
 
-  if (!open) return null;
-
   const groups = useMemo(() => {
     const map = new Map<string, PaletteItem[]>();
     for (const item of allItems) {
@@ -179,6 +177,8 @@ export function CommandPalette() {
     }
     return Array.from(map.entries());
   }, [allItems]);
+
+  if (!open) return null;
 
   let flatIndex = -1;
 

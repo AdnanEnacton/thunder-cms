@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -17,6 +17,12 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
+  const [configExists, setConfigExists] = useState<boolean | null>(null);
+  const [configTemplate, setConfigTemplate] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
+  const [generatedSha, setGeneratedSha] = useState("");
+
   useEffect(() => {
     fetch(`/api/projects/${projectId}`)
       .then((r) => r.json())
@@ -27,7 +33,39 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
         }
       })
       .finally(() => setLoading(false));
+
+    fetch(`/api/projects/${projectId}/blocks/config`)
+      .then((r) => r.json())
+      .then((d) => {
+        setConfigExists(Boolean(d.exists));
+        if (typeof d.template === "string") setConfigTemplate(d.template);
+      })
+      .catch(() => setConfigExists(null));
   }, [projectId]);
+
+  async function generateConfig(mode: "template" | "migrate") {
+    setGenerating(true);
+    setGenerateError("");
+    setGeneratedSha("");
+    try {
+      const res = await fetch(`/api/projects/${projectId}/blocks/config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setGenerateError(d.error ?? "Failed to generate thunder.config.ts");
+      } else {
+        setConfigExists(true);
+        setGeneratedSha(d.commitSha ?? "");
+      }
+    } catch {
+      setGenerateError("Failed to generate thunder.config.ts");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -73,7 +111,7 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
           onChange={(e) => setCommitMode(e.target.value as "auto" | "custom")}
           className="flex h-10 w-full rounded-[10px] border border-border bg-surface-raised px-3.5 text-sm shadow-xs focus-visible:border-thunder-500 focus-visible:outline-none"
         >
-          <option value="auto">Auto-generate (e.g. Update: "Title")</option>
+          <option value="auto">Auto-generate (e.g. Update: &quot;Title&quot;)</option>
           <option value="custom">Ask me before each save</option>
         </select>
         <p className="text-xs text-muted">In custom mode, a dialog asks for a commit message on each save.</p>
@@ -91,6 +129,54 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
           Every component in this folder becomes an available block in the page builder. Leave blank
           to use the framework default (<span className="font-mono">src/components</span>).
         </p>
+      </div>
+
+      <div className="space-y-2 rounded-[10px] border border-border p-4">
+        <label className="text-sm font-medium">Config-driven blocks (npm model)</label>
+        <p className="text-xs text-muted">
+          Install block packages with <span className="font-mono">pnpm add @thunder/blocks-marketing</span>{" "}
+          and list them in a <span className="font-mono">thunder.config.ts</span> at your repo root instead
+          of relying on a folder scan. When present, it takes priority over the components folder above.
+        </p>
+        {configExists === true ? (
+          <p className="text-xs text-emerald-600 dark:text-emerald-400">
+            <span className="font-mono">thunder.config.ts</span> found in your repo — the page builder is
+            reading blocks from it.
+            {generatedSha && ` Committed ${generatedSha.slice(0, 7)}.`}
+          </p>
+        ) : configExists === false ? (
+          <div className="space-y-2">
+            <p className="text-xs text-muted">
+              No <span className="font-mono">thunder.config.ts</span> yet — the page builder is falling back
+              to scanning the components folder.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" onClick={() => generateConfig("template")} disabled={generating}>
+                {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                Generate starter template
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => generateConfig("migrate")}
+                disabled={generating}
+                title="Draft thunder.config.ts from your currently-scanned components and registry overrides"
+              >
+                {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                Migrate existing blocks
+              </Button>
+            </div>
+            {generateError && <p className="text-xs text-destructive">{generateError}</p>}
+            {configTemplate && (
+              <details className="text-xs text-muted">
+                <summary className="cursor-pointer select-none">Preview template</summary>
+                <pre className="mt-2 overflow-x-auto rounded-md bg-surface-overlay p-3 font-mono text-[11px]">
+                  {configTemplate}
+                </pre>
+              </details>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

@@ -102,6 +102,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Next (Phase 5 — Polish & scale)
 
+- [ ] **Last updated by / when** on content entries (team user + date) — see tracker **P2-E**
 - [ ] GitLab provider, WebSocket presence/cursors, MDX shortcodes, deploy-status webhooks, SEO suggestions
 - [ ] (Production hardening) PostgreSQL migration, OAuth token encryption, tests + CI
 

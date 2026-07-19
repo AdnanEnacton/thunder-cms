@@ -69,7 +69,7 @@ If only the code exists but it's not reachable/wired, mark `[~]` with a note.
 - Config dir in repos is `.thunder/` (not `.sitepins/`).
 - Follow existing code style in the file you're editing; use the libraries already in `apps/web/package.json` (do **not** introduce a new library without checking first).
 - Prisma is SQLite in dev — avoid Postgres-only features until the X-1/P0-B migration happens.
-- Run `pnpm lint` and `pnpm build` (or the relevant workspace lint/typecheck) after non-trivial changes; fix what you broke before marking a tracker item `[x]`.
+- Run `pnpm lint`, `pnpm build`, and `pnpm test` (or the relevant workspace lint/typecheck/test) after non-trivial changes; fix what you broke before marking a tracker item `[x]`.
 
 ## Don'ts
 
@@ -80,13 +80,9 @@ If only the code exists but it's not reachable/wired, mark `[~]` with a note.
 
 ## Suggested next work order (from the tracker)
 
-Phase 4 is **done**. Remaining polish/next-phase items:
+Phase 4 is **done**. The npm + config-driven blocks model (`THUNDER-COMPONENTS-NPM-MODEL.md` Phases A-E) is **done**. P2-E, P4-H, and X-4 are **done**. `pnpm test` (vitest, turbo) now runs across `apps/web` + `packages/blocks-*` — run it alongside `pnpm lint`/`pnpm build` after non-trivial changes. Remaining items:
 
-1. **P3-E** Improve conflict UX (on 409, offer Reload/Discard/Overwrite instead of bare toast).
-2. **P4-H** Wire custom commit messages + branch targeting into config-file save and media upload (entry save only today).
-3. **P2-B** Pagination on `entries/route.ts` GET.
-4. **P4-E2** Real-time draft preview (preview worker) — current preview shows deployed staging site only.
-5. **X-4** Set up ESLint config (`eslint-config-next` + `.eslintrc`) so `pnpm lint` runs non-interactively.
-6. Then start **Phase 5** (begin with P5-A i18n or P5-B GitLab provider).
+1. **P4-E2** Real-time draft preview (preview worker) — current preview shows deployed staging site only.
+2. Then **Phase 5** (begin with P5-A i18n or P5-B GitLab provider) — see `PROGRESS-TRACKER.md`.
 
 > Note: the dev server was stopped to run the Prisma migration (`+targetBranch`, `+previewUrl`). Run `pnpm dev` to restart.

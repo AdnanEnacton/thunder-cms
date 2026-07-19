@@ -125,7 +125,8 @@ export interface BlockFieldDef {
 /** How a block definition came to exist. */
 export type BlockSource =
   | { kind: "manual" }
-  | { kind: "component"; file: string; export?: string };
+  | { kind: "component"; file: string; export?: string }
+  | { kind: "package"; package: string; block: string; version?: string };
 
 /**
  * A block = one composable page component. `key` is written to each block
@@ -168,6 +169,42 @@ export interface BlockRegistry {
   version: 1;
   blocks: BlockDef[];
   pageTypes: PageTypeDef[];
+}
+
+// ---------------------------------------------------------------------------
+// npm + config-driven blocks (THUNDER-COMPONENTS-NPM-MODEL.md)
+// ---------------------------------------------------------------------------
+
+/** Where a block's component implementation lives — npm package or a local repo file. */
+export type BlockImportSpec =
+  | { from: string; export?: string }
+  | { package: string; block: string };
+
+export interface BlockConfigEntry {
+  /** Written to frontmatter as `_template`. */
+  key: string;
+  label: string;
+  category?: string;
+  icon?: string;
+  description?: string;
+  /** Implementation reference. Omit for content-only blocks (CMS fields only). */
+  import?: BlockImportSpec;
+  /**
+   * CMS field schema. For package blocks, usually omitted (manifest provides it).
+   * For local blocks, omitted = auto-discover from props.
+   * Required for content-only blocks (no import).
+   */
+  fields?: BlockFieldDef[];
+  /** Default prop values seeded when an editor adds this block. Not written to Git unless saved. */
+  defaults?: Record<string, unknown>;
+  /** Fixed props always applied at render time (dev-only, not shown in the CMS). */
+  props?: Record<string, unknown>;
+}
+
+/** The `thunder.config.ts` contract — block registry + page types for a project. */
+export interface ThunderBlocksConfig {
+  blocks: BlockConfigEntry[];
+  pageTypes?: PageTypeDef[];
 }
 
 export interface GitRepo {

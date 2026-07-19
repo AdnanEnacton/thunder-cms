@@ -20,7 +20,7 @@ import {
 import { humanizeFieldKey } from "@/lib/content/field-ui";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
-import { BlockPalette } from "./block-palette";
+import { BlockPickerDialog } from "./block-picker-dialog";
 import { BlockFieldPanel } from "./block-field-panel";
 import { BlockDefDialog } from "./block-def-dialog";
 import { RendererDialog } from "./renderer-dialog";
@@ -50,8 +50,11 @@ export function PageBuilder({
   const [overrides, setOverrides] = useState<BlockDef[]>([]);
   const [pageTypeDefs, setPageTypeDefs] = useState<PageTypeDef[]>([]);
   const [registryLoading, setRegistryLoading] = useState(true);
+  const [registrySource, setRegistrySource] = useState<"config" | "folder-scan" | null>(null);
+  const [registryWarnings, setRegistryWarnings] = useState<string[]>([]);
   const [selected, setSelected] = useState<number | "page" | null>("page");
   const [rendererOpen, setRendererOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDef, setEditingDef] = useState<BlockDef | null>(null);
@@ -69,6 +72,9 @@ export function PageBuilder({
       setRegistry(Array.isArray(data.blocks) ? data.blocks : []);
       setOverrides(Array.isArray(data.overrides) ? data.overrides : []);
       setPageTypeDefs(Array.isArray(data.pageTypes) ? data.pageTypes : []);
+      setRegistrySource(data.source === "config" ? "config" : "folder-scan");
+      const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+      setRegistryWarnings(data.warning ? [data.warning, ...warnings] : warnings);
     }
     setRegistryLoading(false);
   }, [projectId]);
@@ -171,35 +177,29 @@ export function PageBuilder({
 
   return (
     <div className="flex h-full min-h-0 flex-1">
-      <BlockPalette
-        blocks={paletteBlocks}
-        loading={registryLoading}
-        onAdd={addBlock}
-        onEdit={(def) => {
-          setEditingDef(def);
-          setDialogOpen(true);
-        }}
-        onDelete={(def) => setDeletingDef(def)}
-        onNew={() => {
-          setEditingDef(null);
-          setDialogOpen(true);
-        }}
-        onRefresh={reload}
-      />
-
       {/* Canvas */}
       <div className="flex flex-1 flex-col overflow-hidden bg-surface">
         <div className="flex items-center justify-between border-b border-border px-5 py-2.5">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted">Page canvas</p>
-          <button
-            type="button"
-            onClick={() => setRendererOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-overlay hover:text-thunder-600"
-            title="Generate the renderer for your framework"
-          >
-            <Code2 className="h-3.5 w-3.5" />
-            Renderer
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-thunder-600 transition-colors hover:bg-thunder-50"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add block
+            </button>
+            <button
+              type="button"
+              onClick={() => setRendererOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-overlay hover:text-thunder-600"
+              title="Generate the renderer for your framework"
+            >
+              <Code2 className="h-3.5 w-3.5" />
+              Renderer
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-auto p-4">
           <div className="mx-auto max-w-xl space-y-2">
@@ -258,23 +258,34 @@ export function PageBuilder({
               );
             })}
 
-            {pageBlocks.length === 0 && (
-              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-6 py-12 text-center">
+            {pageBlocks.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-border px-6 py-12 text-center transition-colors hover:border-thunder-300 hover:bg-surface-subtle"
+              >
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-surface-overlay">
                   <Plus className="h-5 w-5 text-muted" />
                 </div>
                 <p className="text-sm font-medium">No blocks yet</p>
-                <p className="text-xs text-muted">
-                  Add blocks from the palette on the left to compose this page.
-                </p>
-              </div>
+                <p className="text-xs text-muted">Click to add your first block.</p>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-border px-3 py-2.5 text-xs font-medium text-muted transition-colors hover:border-thunder-300 hover:bg-surface-subtle hover:text-thunder-600"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add block
+              </button>
             )}
           </div>
         </div>
       </div>
 
       {/* Field panel */}
-      <div className="flex w-[min(420px,38%)] shrink-0 flex-col overflow-auto border-l border-border bg-surface-raised">
+      <div className="flex w-[min(560px,44%)] shrink-0 flex-col overflow-auto border-l border-border bg-surface-raised">
         <BlockFieldPanel
           projectId={projectId}
           selected={selected}
@@ -285,6 +296,34 @@ export function PageBuilder({
           def={selectedDef}
         />
       </div>
+
+      <BlockPickerDialog
+        open={pickerOpen}
+        blocks={paletteBlocks}
+        loading={registryLoading}
+        source={registrySource}
+        warnings={registryWarnings}
+        onAdd={(def) => {
+          addBlock(def);
+          setPickerOpen(false);
+        }}
+        onEdit={(def) => {
+          setEditingDef(def);
+          setDialogOpen(true);
+          setPickerOpen(false);
+        }}
+        onDelete={(def) => {
+          setDeletingDef(def);
+          setPickerOpen(false);
+        }}
+        onNew={() => {
+          setEditingDef(null);
+          setDialogOpen(true);
+          setPickerOpen(false);
+        }}
+        onRefresh={reload}
+        onClose={() => setPickerOpen(false)}
+      />
 
       <BlockDefDialog
         open={dialogOpen}

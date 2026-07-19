@@ -76,15 +76,23 @@ export function listMediaFiles(
     .filter((entry) => {
       if (entry.type !== "file" || !isMediaFile(entry.path)) return false;
       if (!entry.path.startsWith(prefix)) return false;
+      // A specific folder tab lists only its own direct files (subfolders get
+      // their own tab). "All files" (folder === "") recurses through every
+      // subfolder under mediaRoot instead of just its root-level files.
+      if (!folder) return true;
       const relative = entry.path.slice(prefix.length);
       return relative.length > 0 && !relative.includes("/");
     })
     .map((entry) => {
       const name = entry.path.split("/").pop() ?? entry.path;
+      const relativeToRoot = entry.path.slice(mediaRoot.length + 1);
+      const entryFolder = relativeToRoot.includes("/")
+        ? relativeToRoot.slice(0, relativeToRoot.lastIndexOf("/"))
+        : "";
       return {
         path: entry.path,
         name,
-        folder,
+        folder: entryFolder,
         publicPath: toPublicPath(entry.path, mediaRoot, mediaPublic),
       };
     })

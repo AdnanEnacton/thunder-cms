@@ -4,10 +4,27 @@ import { getFileContent, getRepoTree } from "@/lib/github";
 import { getProjectForUser, getProjectBranch } from "@/lib/project-auth";
 import { defaultComponentsRoot } from "@/lib/framework";
 import { isComponentFile } from "@/lib/blocks/discover";
-import { buildDiscoveredBlocks, mergeEffectiveBlocks } from "@/lib/blocks/effective";
+import { buildDiscoveredBlocks, mergeEffectiveBlocks, resolveConfigDrivenBlocks } from "@/lib/blocks/effective";
 import { parseBlockRegistry, parsePageTypes } from "@/lib/blocks/registry";
+import type { LockfileFile } from "@/lib/blocks/npm-manifest";
 
 const MAX_FILES = 120;
+const LOCKFILE_NAMES: LockfileFile["name"][] = ["pnpm-lock.yaml", "package-lock.json", "yarn.lock"];
+
+async function readRepoFile(
+  token: string,
+  owner: string,
+  repo: string,
+  path: string,
+  branch: string,
+): Promise<string | null> {
+  try {
+    const { content } = await getFileContent(token, owner, repo, path, branch);
+    return content;
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(
   _request: Request,
@@ -28,9 +45,41 @@ export async function GET(
     defaultComponentsRoot(project.framework as GitFramework | null);
   const overrides = parseBlockRegistry(project.blockRegistry);
   const pageTypes = parsePageTypes(project.pageTypes);
+  const owner = project.gitRepoOwner!;
+  const repo = project.gitRepoName!;
+  const branch = getProjectBranch(project);
+
+  const thunderConfigSource = await readRepoFile(token, owner, repo, "thunder.config.ts", branch);
+
+  if (thunderConfigSource) {
+    const packageJsonSource = await readRepoFile(token, owner, repo, "package.json", branch);
+    let lockfile: LockfileFile | null = null;
+    for (const name of LOCKFILE_NAMES) {
+      const source = await readRepoFile(token, owner, repo, name, branch);
+      if (source) {
+        lockfile = { name, source };
+        break;
+      }
+    }
+
+    const configResult = await resolveConfigDrivenBlocks(thunderConfigSource, {
+      packageJsonSource,
+      lockfile,
+      readLocalFile: (path) => readRepoFile(token, owner, repo, path, branch),
+    });
+
+    return NextResponse.json({
+      blocks: configResult.blocks,
+      overrides,
+      pageTypes: configResult.pageTypes.length ? configResult.pageTypes : pageTypes,
+      componentsRoot,
+      source: "config",
+      warnings: configResult.warnings,
+    });
+  }
 
   try {
-    const tree = await getRepoTree(token, project.gitRepoOwner!, project.gitRepoName!, getProjectBranch(project));
+    const tree = await getRepoTree(token, owner, repo, branch);
 
     const componentPaths = tree
       .filter(
@@ -50,18 +99,8 @@ export async function GET(
       const batch = paths.slice(i, i + batchSize);
       const fetched = await Promise.all(
         batch.map(async (path) => {
-          try {
-            const { content } = await getFileContent(
-              token,
-              project.gitRepoOwner!,
-              project.gitRepoName!,
-              path,
-              getProjectBranch(project),
-            );
-            return { path, content };
-          } catch {
-            return null;
-          }
+          const content = await readRepoFile(token, owner, repo, path, branch);
+          return content !== null ? { path, content } : null;
         }),
       );
       for (const f of fetched) if (f) files.push(f);
@@ -75,6 +114,7 @@ export async function GET(
       overrides,
       pageTypes,
       componentsRoot,
+      source: "folder-scan",
       discoveredCount: discovered.length,
       componentFileCount: componentPaths.length,
       truncated,
@@ -87,6 +127,7 @@ export async function GET(
       overrides,
       pageTypes,
       componentsRoot,
+      source: "folder-scan",
       discoveredCount: 0,
       componentFileCount: 0,
       truncated: false,
