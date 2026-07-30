@@ -1,0 +1,54 @@
+
+> @thunder/web@0.0.0 dev C:\ADNAN\CMS\thunder-cms\apps\web
+> next dev
+
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.100:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 5.5s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 4.8s (743 modules)
+ GET /login 200 in 5662ms
+ GET /login 200 in 130ms
+ GET /login 200 in 105ms
+ ✓ Compiled in 5.8s (309 modules)
+ ✓ Compiled in 542ms (309 modules)
+ ✓ Compiled in 206ms (309 modules)
+ ✓ Compiled in 244ms (309 modules)
+ ✓ Compiled in 365ms (309 modules)
+ ✓ Compiled in 458ms (309 modules)
+ ✓ Compiled in 304ms (309 modules)
+ ✓ Compiled in 201ms (309 modules)
+ ✓ Compiled in 206ms (309 modules)
+ ✓ Compiled in 397ms (309 modules)
+ ✓ Compiled in 287ms (309 modules)
+ ✓ Compiled in 669ms (309 modules)
+ ✓ Compiled in 280ms (309 modules)
+ ✓ Compiled in 197ms (309 modules)
+ ✓ Compiled in 204ms (309 modules)
+ ✓ Compiled in 1563ms (309 modules)
+ ✓ Compiled in 274ms (309 modules)
+ ✓ Compiled in 253ms (309 modules)
+ ✓ Compiled in 395ms (309 modules)
+ ✓ Compiled in 213ms (309 modules)
+ ✓ Compiled in 272ms (309 modules)
+ ✓ Compiled in 456ms (309 modules)
+ ○ Compiling /api/projects/[id]/deployment ...
+ ✓ Compiled /api/projects/[id]/deployment in 2.5s (1035 modules)
+ GET /api/projects/fake-id/deployment 200 in 4970ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 834ms (448 modules)
+ ⨯ [Error [InvariantError]: Invariant: Expected clientReferenceManifest to be defined. This is a bug in Next.js.]
+ ⨯ [Error [InvariantError]: Invariant: Expected clientReferenceManifest to be defined. This is a bug in Next.js.] {
+  page: '/login'
+}
+ ○ Compiling /_error ...
+ GET /login 500 in 2930ms
+ ✓ Compiled /_error in 2.4s (1091 modules)
+ GET /login 200 in 608ms
+ ✓ Compiled /api/projects/[id]/deployment in 399ms (1293 modules)
+ GET /api/projects/fake-id/deployment 401 in 1144ms
+ ✓ Compiled in 3.6s (570 modules)
