@@ -1,0 +1,5 @@
+{
+  "common": { "save": "Speichern", "saving": "Speichern…", "cancel": "Abbrechen", "delete": "Löschen", "edit": "Bearbeiten", "close": "Schließen", "back": "Zurück", "create": "Erstellen", "loading": "Laden…", "search": "Suchen", "settings": "Einstellungen" },
+  "nav": { "dashboard": "Übersicht", "projects": "Projekte", "content": "Inhalt", "media": "Medien", "team": "Team", "activity": "Aktivität", "settings": "Einstellungen", "signOut": "Abmelden" },
+  "settings": { "language": "Sprache", "languageHint": "Wählen Sie die Oberflächensprache. Gilt für Ihr Konto auf diesem Gerät." }
+}

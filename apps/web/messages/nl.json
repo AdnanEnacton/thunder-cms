@@ -1,0 +1,5 @@
+{
+  "common": { "save": "Opslaan", "saving": "Opslaan…", "cancel": "Annuleren", "delete": "Verwijderen", "edit": "Bewerken", "close": "Sluiten", "back": "Terug", "create": "Aanmaken", "loading": "Laden…", "search": "Zoeken", "settings": "Instellingen" },
+  "nav": { "dashboard": "Dashboard", "projects": "Projecten", "content": "Inhoud", "media": "Media", "team": "Team", "activity": "Activiteit", "settings": "Instellingen", "signOut": "Afmelden" },
+  "settings": { "language": "Taal", "languageHint": "Kies de taal van de interface. Van toepassing op je account op dit apparaat." }
+}

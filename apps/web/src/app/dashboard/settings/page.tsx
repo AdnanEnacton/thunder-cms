@@ -1,6 +1,8 @@
-import { Bell, Github, Sparkles, User } from "lucide-react";
+import { Bell, Github, Languages, Sparkles, User } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AiKeySettings } from "@/components/ai-key-settings";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 
 const settingsSections = [
   {
@@ -23,7 +25,8 @@ const settingsSections = [
   },
 ];
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const t = await getTranslations("settings");
   return (
     <div className="space-y-8">
       <div className="page-header">
@@ -50,6 +53,19 @@ export default function SettingsPage() {
           );
         })}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Languages className="h-4 w-4 text-thunder-600" />
+            {t("language")}
+          </CardTitle>
+          <CardDescription>{t("languageHint")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LocaleSwitcher />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

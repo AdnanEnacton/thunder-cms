@@ -1,0 +1,5 @@
+{
+  "common": { "save": "保存", "saving": "保存中…", "cancel": "取消", "delete": "删除", "edit": "编辑", "close": "关闭", "back": "返回", "create": "创建", "loading": "加载中…", "search": "搜索", "settings": "设置" },
+  "nav": { "dashboard": "仪表板", "projects": "项目", "content": "内容", "media": "媒体", "team": "团队", "activity": "活动", "settings": "设置", "signOut": "退出登录" },
+  "settings": { "language": "语言", "languageHint": "选择界面语言。适用于此设备上的账户。" }
+}

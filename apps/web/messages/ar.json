@@ -1,0 +1,5 @@
+{
+  "common": { "save": "حفظ", "saving": "جارٍ الحفظ…", "cancel": "إلغاء", "delete": "حذف", "edit": "تعديل", "close": "إغلاق", "back": "رجوع", "create": "إنشاء", "loading": "جارٍ التحميل…", "search": "بحث", "settings": "الإعدادات" },
+  "nav": { "dashboard": "لوحة التحكم", "projects": "المشاريع", "content": "المحتوى", "media": "الوسائط", "team": "الفريق", "activity": "النشاط", "settings": "الإعدادات", "signOut": "تسجيل الخروج" },
+  "settings": { "language": "اللغة", "languageHint": "اختر لغة الواجهة. تنطبق على حسابك على هذا الجهاز." }
+}

@@ -1,0 +1,5 @@
+{
+  "common": { "save": "Enregistrer", "saving": "Enregistrement…", "cancel": "Annuler", "delete": "Supprimer", "edit": "Modifier", "close": "Fermer", "back": "Retour", "create": "Créer", "loading": "Chargement…", "search": "Rechercher", "settings": "Paramètres" },
+  "nav": { "dashboard": "Tableau de bord", "projects": "Projets", "content": "Contenu", "media": "Médias", "team": "Équipe", "activity": "Activité", "settings": "Paramètres", "signOut": "Se déconnecter" },
+  "settings": { "language": "Langue", "languageHint": "Choisissez la langue de l’interface. S’applique à votre compte sur cet appareil." }
+}

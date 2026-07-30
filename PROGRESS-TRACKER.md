@@ -174,7 +174,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.1 | i18n (12 locales) | `[ ]` | In progress — `next-intl` plumbing + English messages + `LocaleSwitcher`; other 11 locales stubbed for translators. |
+| 5.1 | i18n (12 locales) | `[~]` | **Plumbing complete (English-only content by design).** `next-intl` v4, cookie-based locale (`THUNDER_LOCALE`, no `[locale]` URL segment — drops onto existing routes). `src/i18n/{config,request}.ts` (request.ts deep-merges each locale over the complete English base so partial catalogs fall back per-key). `messages/en.json` complete (13 sections); 11 other locales seeded with real `common`/`nav`/`settings.language` translations + stubbed remainder for translators. `NextIntlClientProvider` in root layout, `<html lang/dir>` set (RTL for `ar`). `LocaleSwitcher` in dashboard settings (writes cookie + `router.refresh()`). **Remaining: migrate the rest of the hardcoded UI strings into the catalog (incremental) — infra proven via the settings page.** |
 | 5.2 | GitLab provider | `[ ]` | In progress — abstracting Git behind a `GitProvider` interface + GitLab client. |
 | 5.3 | Collaborative cursors (WebSocket presence) | `[x]` | New `apps/ws-server` (standalone socket.io, one room per `projectId::filePath`, in-memory roster, color assignment, optional `WS_AUTH_SECRET`, `/health`). Web: `GET /api/realtime` (URL+secret to authed users only), `usePresence` hook (`socket.io-client`), `PresenceBar` live avatars in the editor header, save broadcasts `entry:saved` to peers. Degrades to a no-op when `NEXT_PUBLIC_WS_URL` is unset. **Cursor transport is fully implemented in the protocol/hook (`peer:cursor`/`sendCursor`); pixel-accurate remote-caret rendering inside the custom contenteditable is the one deferred polish item (P5-C2).** |
 | 5.4 | Shortcode / block editor (MDX components) | `[ ]` | In progress — shortcode insertion (Callout/YouTube/etc.) in the notion-editor body. |
@@ -182,7 +182,8 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 | 5.6 | SEO suggestions | `[x]` | `lib/seo/analyze.ts` — client-side 0–100 score + actionable checks (title/description/length/headings/alt/slug); `SeoPanel` modal wired into `entry-editor.tsx`. No AI key required. |
 
 ### Phase 5 pending
-- [ ] **P5-A** i18n setup (`next-intl`) + locale files.
+- [x] **P5-A** i18n setup (`next-intl`) + locale files. — **Done** (plumbing + English + 12 locale files + switcher).
+- [ ] **P5-A2** Migrate remaining hardcoded UI strings into `messages/*.json` (incremental).
 - [ ] **P5-B** Abstract Git provider behind `GitProvider` interface; add GitLab client (`@gitbeaker/rest`).
 - [x] **P5-C** WebSocket presence + cursors. — **Done.** `apps/ws-server` + `usePresence` + `PresenceBar`.
 - [ ] **P5-C2** Render remote carets (pixel-accurate) inside the custom markdown/visual editor — transport already ships them, only the overlay renderer remains.
