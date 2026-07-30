@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { commitFile, deleteFile, getFileContent, listCommitsForFile, getFileAtRef } from "@/lib/github";
+import { getGitProvider } from "@/lib/git";
 import { parseContentFile, serializeContentFile } from "@/lib/content/parser";
 import { inferFieldsFromEntries } from "@/lib/content/schema";
 import { getProjectForUser, getProjectBranch } from "@/lib/project-auth";
@@ -26,15 +26,10 @@ export async function GET(
 
   const { project, token } = result;
   const branch = getProjectBranch(project);
+  const git = getGitProvider(project, token);
 
   try {
-    const { content, sha } = await getFileContent(
-      token,
-      project.gitRepoOwner!,
-      project.gitRepoName!,
-      path,
-      branch,
-    );
+    const { content, sha } = await git.getFileContent(path, branch);
 
     const parsed = parseContentFile(path, content);
     const fields = inferFieldsFromEntries([parsed.frontmatter]);
@@ -73,29 +68,15 @@ export async function PUT(
 
   const { project, token, session } = result;
   const branch = getProjectBranch(project);
+  const git = getGitProvider(project, token);
   const title = frontmatter?.title ?? frontmatter?.name ?? path.split("/").pop();
   const message = customMessage?.trim() || `Update: "${title}"`;
   const content = serializeContentFile(format, frontmatter ?? {}, entryBody ?? "");
 
   try {
-    const commitSha = await commitFile(
-      token,
-      project.gitRepoOwner!,
-      project.gitRepoName!,
-      branch,
-      path,
-      content,
-      message,
-      sha,
-    );
+    const commitSha = await git.commitFile(branch, path, content, message, sha);
 
-    const updated = await getFileContent(
-      token,
-      project.gitRepoOwner!,
-      project.gitRepoName!,
-      path,
-      branch,
-    );
+    const updated = await git.getFileContent(path, branch);
 
     await prisma.activityLog.create({
       data: {
@@ -145,18 +126,12 @@ export async function DELETE(
 
   const { project, token, session } = result;
   const branch = getProjectBranch(project);
+  const git = getGitProvider(project, token);
   const title = path.split("/").pop()?.replace(/\.[^.]+$/, "") ?? path;
   const message = `Delete: "${title}"`;
 
   try {
-    const commitSha = await deleteFile(
-      token,
-      project.gitRepoOwner!,
-      project.gitRepoName!,
-      branch,
-      path,
-      message,
-    );
+    const commitSha = await git.deleteFile(branch, path, message);
 
     await prisma.activityLog.create({
       data: {

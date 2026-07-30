@@ -12,6 +12,7 @@ interface ProjectSettingsClientProps {
 export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps) {
   const [commitMode, setCommitMode] = useState<"auto" | "custom">("auto");
   const [componentsRoot, setComponentsRoot] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -30,6 +31,7 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
         if (d.project) {
           setCommitMode(d.project.commitMessageMode ?? "auto");
           setComponentsRoot(d.project.componentsRoot ?? "");
+          setPreviewUrl(d.project.previewUrl ?? "");
         }
       })
       .finally(() => setLoading(false));
@@ -78,6 +80,7 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
         body: JSON.stringify({
           commitMessageMode: commitMode,
           componentsRoot: componentsRoot.trim() || null,
+          previewUrl: previewUrl.trim() || null,
         }),
       });
       if (!res.ok) {
@@ -115,6 +118,21 @@ export function ProjectSettingsClient({ projectId }: ProjectSettingsClientProps)
           <option value="custom">Ask me before each save</option>
         </select>
         <p className="text-xs text-muted">In custom mode, a dialog asks for a commit message on each save.</p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Preview URL</label>
+        <Input
+          value={previewUrl}
+          onChange={(e) => setPreviewUrl(e.target.value)}
+          placeholder="https://your-site.vercel.app"
+          className="font-mono text-sm"
+        />
+        <p className="text-xs text-muted">
+          The deployed site URL (staging or production). Shown in the{" "}
+          <span className="font-medium">Preview</span> tab so editors can see the live site while
+          editing.
+        </p>
       </div>
 
       <div className="space-y-2">

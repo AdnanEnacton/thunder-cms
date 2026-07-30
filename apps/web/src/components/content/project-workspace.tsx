@@ -10,6 +10,7 @@ import { EntryEditor } from "@/components/content/entry-editor";
 import { ContentPanel } from "@/components/project/content-panel";
 import { ConfigPanel } from "@/components/project/config-panel";
 import { MediaLibrary } from "@/components/project/media-library";
+import { PreviewPanel } from "@/components/project/preview-panel";
 import {
   ProjectSidebar,
   type ProjectView,
@@ -407,6 +408,8 @@ export function ProjectWorkspace({ projectId, projectName, user }: ProjectWorksp
           />
         ) : view === "media" ? (
           <MediaLibrary projectId={projectId} />
+        ) : view === "preview" ? (
+          <PreviewPanel projectId={projectId} />
         ) : (
           <ConfigPanel
             projectId={projectId}

@@ -10,6 +10,7 @@ import {
   Upload,
   Trash2,
   Activity,
+  GitPullRequest,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectSubpageLayout } from "@/components/project/project-subpage-layout";
@@ -25,6 +26,7 @@ const ACTION_META: Record<
   "media.deleted":     { label: "Media deleted",  icon: Trash2,    color: "text-red-500 bg-red-50 dark:bg-red-500/10 dark:text-red-400" },
   "project.configured":{ label: "Configured",     icon: Settings,  color: "text-thunder-500 bg-thunder-50 dark:bg-thunder-500/10 dark:text-thunder-400" },
   "config.updated":    { label: "Config updated", icon: Settings,  color: "text-amber-500 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400" },
+  "pull_request.opened": { label: "Pull request opened", icon: GitPullRequest, color: "text-violet-500 bg-violet-50 dark:bg-violet-500/10 dark:text-violet-400" },
 };
 
 function timeAgo(date: Date) {

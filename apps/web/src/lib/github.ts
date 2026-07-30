@@ -318,3 +318,185 @@ export async function getFileAtRef(
   const content = Buffer.from(data.content, "base64").toString("utf8");
   return { content, sha: data.sha };
 }
+
+export interface PullRequestInfo {
+  number: number;
+  url: string;
+  title: string;
+  state: string;
+}
+
+/** Find the open PR whose source is `head` and target is `base`, if any. */
+export async function getOpenPullRequest(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  head: string,
+  base: string,
+): Promise<PullRequestInfo | null> {
+  const octokit = createOctokit(accessToken);
+  const { data } = await octokit.rest.pulls.list({
+    owner,
+    repo,
+    state: "open",
+    head: `${owner}:${head}`,
+    base,
+    per_page: 1,
+  });
+
+  const pr = data[0];
+  if (!pr) return null;
+  return { number: pr.number, url: pr.html_url, title: pr.title, state: pr.state };
+}
+
+/** How many commits `head` is ahead of `base` (0 means nothing to merge). */
+export async function compareBranches(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  base: string,
+  head: string,
+): Promise<{ aheadBy: number; behindBy: number }> {
+  const octokit = createOctokit(accessToken);
+  const { data } = await octokit.rest.repos.compareCommitsWithBasehead({
+    owner,
+    repo,
+    basehead: `${base}...${head}`,
+  });
+  return { aheadBy: data.ahead_by, behindBy: data.behind_by };
+}
+
+export async function createPullRequest(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  head: string,
+  base: string,
+  title: string,
+  body?: string,
+): Promise<PullRequestInfo> {
+  const octokit = createOctokit(accessToken);
+  const { data } = await octokit.rest.pulls.create({
+    owner,
+    repo,
+    head,
+    base,
+    title,
+    body,
+  });
+
+  return { number: data.number, url: data.html_url, title: data.title, state: data.state };
+}
+
+export type DeploymentState = "success" | "pending" | "failure" | "error" | "none";
+
+export interface DeploymentStatus {
+  state: DeploymentState;
+  description: string | null;
+  /** Link to the deploy/build log (provider dashboard). */
+  logUrl: string | null;
+  /** Public URL of the deployed site, when the provider reports it. */
+  environmentUrl: string | null;
+  environment: string | null;
+  updatedAt: string | null;
+}
+
+// GitHub / provider states → our simplified set.
+function normalizeState(raw: string): DeploymentState {
+  switch (raw) {
+    case "success":
+      return "success";
+    case "failure":
+      return "failure";
+    case "error":
+      return "error";
+    case "pending":
+    case "queued":
+    case "in_progress":
+    case "waiting":
+      return "pending";
+    default:
+      return "none";
+  }
+}
+
+/**
+ * Latest deployment status for a branch. Vercel/Netlify (and most hosts) report
+ * deploys through the GitHub Deployments API and/or commit statuses, so we read
+ * those rather than integrating each provider directly. Deployments are richer
+ * (they carry the live environment URL), so we prefer them and fall back to the
+ * combined commit status.
+ */
+export async function getLatestDeploymentStatus(
+  accessToken: string,
+  owner: string,
+  repo: string,
+  ref: string,
+): Promise<DeploymentStatus> {
+  const octokit = createOctokit(accessToken);
+  const empty: DeploymentStatus = {
+    state: "none",
+    description: null,
+    logUrl: null,
+    environmentUrl: null,
+    environment: null,
+    updatedAt: null,
+  };
+
+  // 1) Prefer the Deployments API (carries environment_url for Vercel/Netlify).
+  try {
+    const { data: deployments } = await octokit.rest.repos.listDeployments({
+      owner,
+      repo,
+      ref,
+      per_page: 1,
+    });
+
+    const deployment = deployments[0];
+    if (deployment) {
+      const { data: statuses } = await octokit.rest.repos.listDeploymentStatuses({
+        owner,
+        repo,
+        deployment_id: deployment.id,
+        per_page: 1,
+      });
+      const status = statuses[0];
+      if (status) {
+        return {
+          state: normalizeState(status.state),
+          description: status.description || null,
+          logUrl: status.log_url || status.target_url || null,
+          environmentUrl: status.environment_url || null,
+          environment: status.environment || deployment.environment || null,
+          updatedAt: status.updated_at || null,
+        };
+      }
+    }
+  } catch {
+    // fall through to commit statuses
+  }
+
+  // 2) Fall back to the combined commit status (older Netlify/CI setups).
+  try {
+    const { data: combined } = await octokit.rest.repos.getCombinedStatusForRef({
+      owner,
+      repo,
+      ref,
+    });
+    if (combined.total_count > 0) {
+      const first = combined.statuses[0];
+      return {
+        state: normalizeState(combined.state),
+        description: first?.description || null,
+        logUrl: first?.target_url || null,
+        environmentUrl: null,
+        environment: first?.context || null,
+        updatedAt: first?.updated_at || null,
+      };
+    }
+  } catch {
+    // no statuses available
+  }
+
+  return empty;
+}

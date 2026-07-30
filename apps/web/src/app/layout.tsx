@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Outfit, Instrument_Serif } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 import { CommandPalette } from "@/components/command-palette";
+import { rtlLocales, type Locale } from "@/i18n/config";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -21,10 +24,14 @@ export const metadata: Metadata = {
   description: "Git-based CMS for static site generators. Connect your repo and edit visually.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const dir = rtlLocales.includes(locale as Locale) ? "rtl" : "ltr";
+
   return (
     <html
-      lang="en"
+      lang={locale}
+      dir={dir}
       className={`${outfit.variable} ${instrumentSerif.variable}`}
       suppressHydrationWarning
     >
@@ -36,8 +43,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased">
-        {children}
-        <CommandPalette />
+        <NextIntlClientProvider>
+          {children}
+          <CommandPalette />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

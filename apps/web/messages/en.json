@@ -1,0 +1,120 @@
+{
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "create": "Create",
+    "loading": "Loading…",
+    "search": "Search",
+    "settings": "Settings",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "open": "Open",
+    "reload": "Reload"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "content": "Content",
+    "media": "Media",
+    "team": "Team",
+    "activity": "Activity",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "continueWithGitHub": "Continue with GitHub",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "signInFailed": "Sign in failed. Check your credentials and try again."
+  },
+  "dashboard": {
+    "title": "Your projects",
+    "subtitle": "Connect a repository and start editing content visually.",
+    "newProject": "New project",
+    "noProjects": "No projects yet",
+    "noProjectsHint": "Create your first project to connect a GitHub repository."
+  },
+  "editor": {
+    "content": "Content",
+    "metadata": "Metadata",
+    "write": "Write",
+    "markdown": "Markdown",
+    "history": "History",
+    "seo": "SEO",
+    "ai": "AI",
+    "delete": "Delete",
+    "save": "Save",
+    "saved": "Saved successfully",
+    "saveFailed": "Failed to save",
+    "deleteEntry": "Delete this entry?",
+    "deleteEntryDescription": "This will permanently remove the file from your repository.",
+    "updatedBy": "Updated by {name} on {date}",
+    "placeholder": "Start writing, or type '/' for blocks…",
+    "wordCount": "{count, plural, one {# word} other {# words}}",
+    "editingNow": "{count, plural, one {# person editing} other {# people editing}}"
+  },
+  "seo": {
+    "title": "SEO suggestions",
+    "subtitle": "Live analysis of this entry",
+    "score": "Score",
+    "good": "Good",
+    "needsWork": "Needs work",
+    "poor": "Poor",
+    "checksPassing": "{passed} of {total} checks passing. Fix the flagged items below to improve your score."
+  },
+  "deployment": {
+    "deployed": "Deployed",
+    "building": "Building…",
+    "failed": "Deploy failed",
+    "error": "Deploy error",
+    "none": "No deploys",
+    "status": "Deploy status…"
+  },
+  "pullRequest": {
+    "open": "Open pull request",
+    "nothingToPublish": "Nothing to publish",
+    "prOpen": "PR #{number} open",
+    "failed": "Failed to open pull request"
+  },
+  "team": {
+    "title": "Team",
+    "invite": "Invite member",
+    "role": "Role",
+    "owner": "Owner",
+    "editor": "Editor",
+    "remove": "Remove",
+    "pending": "Pending invitation",
+    "revoke": "Revoke"
+  },
+  "media": {
+    "title": "Media",
+    "upload": "Upload",
+    "uploading": "Uploading…",
+    "delete": "Delete",
+    "copyPath": "Copy path",
+    "grid": "Grid",
+    "list": "List",
+    "empty": "No media in this folder yet."
+  },
+  "settings": {
+    "title": "Project settings",
+    "general": "General",
+    "language": "Language",
+    "languageHint": "Choose the interface language. Applies to your account on this device.",
+    "previewUrl": "Preview URL",
+    "targetBranch": "Target branch",
+    "commitMessages": "Commit messages",
+    "commitAuto": "Automatic",
+    "commitCustom": "Ask me before each save"
+  }
+}

@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   History,
   Save,
+  Search,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -24,6 +25,9 @@ import { CommitMessageDialog } from "@/components/content/commit-message-dialog"
 import { ConflictDialog } from "@/components/content/conflict-dialog";
 import { VersionHistory } from "@/components/content/version-history";
 import { AiAssistant } from "@/components/content/ai-assistant";
+import { SeoPanel } from "@/components/content/seo-panel";
+import { PresenceBar } from "@/components/content/presence-bar";
+import { usePresence } from "@/hooks/use-presence";
 
 interface EntryEditorProps {
   projectId: string;
@@ -56,12 +60,15 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showAi, setShowAi] = useState(false);
+  const [showSeo, setShowSeo] = useState(false);
   const [showConflict, setShowConflict] = useState(false);
   const [resolvingConflict, setResolvingConflict] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<{ userName: string; at: string } | null>(null);
   // Remembers the commit message of the last save attempt so an overwrite
   // (after a conflict) reuses it instead of the default.
   const lastMessageRef = useRef<string | null>(null);
+  // Live collaboration presence (no-op unless a WS server is configured).
+  const { members, selfColor, sendSaved } = usePresence(projectId, filePath);
 
   useEffect(() => {
     async function load() {
@@ -158,6 +165,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
     setSuccess("Saved successfully");
     setPendingMessage(null);
     refreshLastUpdated();
+    sendSaved();
     router.refresh();
     return true;
   }
@@ -287,6 +295,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          <PresenceBar members={members} selfColor={selfColor} />
           <Button
             variant="ghost"
             size="sm"
@@ -296,6 +305,16 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           >
             <History className="h-3.5 w-3.5" />
             History
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSeo(true)}
+            className="text-muted hover:text-foreground"
+            title="SEO suggestions"
+          >
+            <Search className="h-3.5 w-3.5" />
+            SEO
           </Button>
           <Button
             variant="ghost"
@@ -467,6 +486,14 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           setSuccess("AI result applied. Remember to Save.");
           setError("");
         }}
+      />
+
+      <SeoPanel
+        open={showSeo}
+        frontmatter={frontmatter}
+        body={body}
+        filePath={filePath}
+        onClose={() => setShowSeo(false)}
       />
     </div>
   );

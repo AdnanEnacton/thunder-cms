@@ -1,0 +1,5 @@
+{
+  "common": { "save": "Salva", "saving": "Salvataggio…", "cancel": "Annulla", "delete": "Elimina", "edit": "Modifica", "close": "Chiudi", "back": "Indietro", "create": "Crea", "loading": "Caricamento…", "search": "Cerca", "settings": "Impostazioni" },
+  "nav": { "dashboard": "Bacheca", "projects": "Progetti", "content": "Contenuto", "media": "Media", "team": "Team", "activity": "Attività", "settings": "Impostazioni", "signOut": "Esci" },
+  "settings": { "language": "Lingua", "languageHint": "Scegli la lingua dell’interfaccia. Si applica al tuo account su questo dispositivo." }
+}
