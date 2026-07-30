@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   History,
   Save,
+  Search,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { CommitMessageDialog } from "@/components/content/commit-message-dialog"
 import { ConflictDialog } from "@/components/content/conflict-dialog";
 import { VersionHistory } from "@/components/content/version-history";
 import { AiAssistant } from "@/components/content/ai-assistant";
+import { SeoPanel } from "@/components/content/seo-panel";
 
 interface EntryEditorProps {
   projectId: string;
@@ -56,6 +58,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showAi, setShowAi] = useState(false);
+  const [showSeo, setShowSeo] = useState(false);
   const [showConflict, setShowConflict] = useState(false);
   const [resolvingConflict, setResolvingConflict] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<{ userName: string; at: string } | null>(null);
@@ -300,6 +303,16 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setShowSeo(true)}
+            className="text-muted hover:text-foreground"
+            title="SEO suggestions"
+          >
+            <Search className="h-3.5 w-3.5" />
+            SEO
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowAi(true)}
             className="text-muted hover:text-thunder-600"
             title="AI assistant"
@@ -467,6 +480,14 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           setSuccess("AI result applied. Remember to Save.");
           setError("");
         }}
+      />
+
+      <SeoPanel
+        open={showSeo}
+        frontmatter={frontmatter}
+        body={body}
+        filePath={filePath}
+        onClose={() => setShowSeo(false)}
       />
     </div>
   );

@@ -19,14 +19,17 @@ import {
   FolderOpen,
   Activity,
   Users,
+  Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BranchSelector } from "@/components/project/branch-selector";
+import { PullRequestButton } from "@/components/project/pull-request-button";
+import { DeploymentStatus } from "@/components/project/deployment-status";
 import type { ContentEntrySummary } from "@thunder/types";
 
-export type ProjectView = "content" | "media" | "config";
+export type ProjectView = "content" | "media" | "config" | "preview";
 
 export interface SidebarCollection {
   id: string;
@@ -231,6 +234,8 @@ export function ProjectSidebar({
         </div>
 
         <BranchSelector projectId={projectId} />
+        <PullRequestButton projectId={projectId} />
+        <DeploymentStatus projectId={projectId} />
       </div>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-2.5 py-2">
@@ -320,6 +325,12 @@ export function ProjectSidebar({
           icon={<ImageIcon className="h-3.5 w-3.5" />}
           label="Media library"
           onClick={() => onViewChange("media")}
+        />
+        <SidebarNavButton
+          active={view === "preview"}
+          icon={<Monitor className="h-3.5 w-3.5" />}
+          label="Preview"
+          onClick={() => onViewChange("preview")}
         />
         <Link
           href={`/dashboard/projects/${projectId}/team`}

@@ -127,7 +127,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 |---|---|---|---|
 | 4.1 | Custom commit messages (modal on save) | `[x]` | `commitMessageMode` toggle in setup wizard + project settings. Editor shows `CommitMessageDialog` on save when "custom". PUT accepts `message`. |
 | 4.2 | Branch targeting (save to staging) | `[x]` | `BranchSelector` in sidebar; `getProjectBranch(project)` helper; all content/media/configs routes use target branch; can create a new branch from the selector. Switching reloads the page. |
-| 4.3 | PR creation (staging → main) | `[!]` | **REMOVED per user request.** No Open PR button/route. Branch targeting only (save to selected branch). `pulls/route.ts` + `createPullRequest` deleted. Re-add later if needed. |
+| 4.3 | PR creation (staging → main) | `[x]` | **Re-added.** `app/api/projects/[id]/pull-request/route.ts` (GET status + POST open); `getOpenPullRequest`/`compareBranches`/`createPullRequest` in `lib/github.ts`; `PullRequestButton` in `project-sidebar.tsx` — only shows when target branch ≠ default, disabled when nothing to publish, links to an already-open PR. Logs `pull_request.opened` activity. |
 | 4.4 | Version history / rollback | `[x]` | `listCommitsForFile` + `getFileAtRef` in `lib/github.ts`; `GET .../entry/history`; `POST .../entry/restore`; `VersionHistory` dialog in editor with Restore. Activity logged. |
 | 4.5 | Live preview iframe | `[x]` | `previewUrl` column; set in setup wizard + project settings; Eyeball toggle in editor opens an iframe pane. **Staging-URL preview (not real-time draft) — plan MVP.** |
 | 4.6 | Global search (Cmd+K) | `[x]` | Custom `CommandPalette` mounted in root layout (no `cmdk` dep). Nav + collections + entry search via `GET /api/projects/[id]/search`. Capped at 20 results. |
@@ -168,26 +168,26 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 
 ---
 
-## Phase 5 — Polish & scale  ·  `[ ]` 0%
+## Phase 5 — Polish & scale  ·  `[~]` in progress
 
-> Nothing implemented. No i18n, no GitLab, no WebSocket, no MDX shortcodes, no deploy webhooks, no SEO.
+> 5.5 (deployment status) and 5.6 (SEO) shipped. 5.1/5.2/5.3/5.4 in active build this session.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| 5.1 | i18n (12 locales) | `[ ]` | No `next-intl`/locale files/`useTranslations`. (`locales` var name in sidebar is unrelated.) |
-| 5.2 | GitLab provider | `[ ]` | `gitProvider` defaults "github"; `lib/github.ts` is Octokit-only. |
-| 5.3 | Collaborative cursors (WebSocket presence) | `[ ]` | No WS server. |
-| 5.4 | Shortcode / block editor (MDX components) | `[ ]` | No MDX component system. *(A frontmatter `sections[]` array editor with reorderable items exists — that's the deferred Section-15 page/section builder, inference-only, NOT Phase-5 MDX shortcodes.)* |
-| 5.5 | Deployment status (Vercel/Netlify webhook) | `[ ]` | No webhook routes. |
-| 5.6 | SEO suggestions | `[ ]` | No SEO analysis. |
+| 5.1 | i18n (12 locales) | `[ ]` | In progress — `next-intl` plumbing + English messages + `LocaleSwitcher`; other 11 locales stubbed for translators. |
+| 5.2 | GitLab provider | `[ ]` | In progress — abstracting Git behind a `GitProvider` interface + GitLab client. |
+| 5.3 | Collaborative cursors (WebSocket presence) | `[ ]` | In progress — `apps/ws-server` (socket.io) + client hook + editor cursors. |
+| 5.4 | Shortcode / block editor (MDX components) | `[ ]` | In progress — shortcode insertion (Callout/YouTube/etc.) in the notion-editor body. |
+| 5.5 | Deployment status (Vercel/Netlify webhook) | `[x]` | `getLatestDeploymentStatus` reads GitHub Deployments / commit-status that Vercel/Netlify publish (no webhook receiver needed); `GET /api/projects/[id]/deployment` + `DeploymentStatus` in `project-sidebar.tsx` (polls while a build is `pending`, links to the live/log URL). |
+| 5.6 | SEO suggestions | `[x]` | `lib/seo/analyze.ts` — client-side 0–100 score + actionable checks (title/description/length/headings/alt/slug); `SeoPanel` modal wired into `entry-editor.tsx`. No AI key required. |
 
 ### Phase 5 pending
 - [ ] **P5-A** i18n setup (`next-intl`) + locale files.
 - [ ] **P5-B** Abstract Git provider behind `GitProvider` interface; add GitLab client (`@gitbeaker/rest`).
 - [ ] **P5-C** WebSocket presence + cursors.
 - [ ] **P5-D** MDX shortcode/component block editor.
-- [ ] **P5-E** Deploy-status webhooks (Vercel/Netlify).
-- [ ] **P5-F** SEO suggestions on save.
+- [x] **P5-E** Deploy-status webhooks (Vercel/Netlify). — **Done** (via GitHub Deployments/commit-status, no receiver needed).
+- [x] **P5-F** SEO suggestions on save. — **Done** (`SeoPanel`, live client-side analysis).
 
 ---
 
@@ -222,5 +222,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 
 | 2026-07-16 | claude | **C-3: real build + real external-install proof.** Added `tsup` builds (dual ESM/CJS + bundled `.d.ts`) to `@thunder/types`/`blocks-config`/`blocks-runtime`/`blocks-marketing`, switched `main`/`exports` to `dist/`. Verified with `pnpm pack` (confirms `workspace:*` → pinned-version rewrite) and a standalone external project installing the four tarballs via `file:` + a documented `pnpm.overrides` workaround for the not-yet-published `@thunder/types` transitive dep — that project's own `tsc --noEmit` and a real render both passed against genuine `node_modules`-resolved packages, no monorepo source involved. `thunder-integration.md` updated with an honest "not published yet" callout in §3 and a step-by-step appendix for reproducing this test. Publishing to a real npm registry is still not done (scope not claimed) — that's the only remaining gap before `pnpm add @thunder/blocks-marketing` works as literally written. |
 | 2026-07-20 | claude | **Auth.js → better-auth + SQLite → PostgreSQL (Neon), P0-B done.** `schema.prisma` provider = postgresql (+`directUrl`); auth models reshaped to better-auth (`Verification`, `Account.password`, `Boolean emailVerified`, DB sessions). `lib/auth.ts` = `betterAuth()` (prismaAdapter, emailAndPassword, GitHub `repo` scope, `databaseHooks` for org-bootstrap + GitHub-token sync, `nextCookies`) + back-compat `auth()`; new `lib/auth-client.ts`, `api/auth/[...all]`, `getSessionCookie` middleware; deleted `auth.config.ts`/`[...nextauth]`/`register`/`next-auth.d.ts`. Token encryption: `Account` tokens via better-auth `encryptOAuthTokens` (read back through `getAccessToken`); `Organization.githubAccessToken` via `lib/token-crypto` (symmetric, `BETTER_AUTH_SECRET`). `zod` → ^4. `tsc --noEmit` + `next build` pass; email sign-up/sign-in/session verified live against Neon. |
+
+| 2026-07-30 | claude | **Phase 5 push started — 5.5, 5.6, PR (4.3) landed.** SEO suggestions (`lib/seo/analyze.ts` + `SeoPanel` in the editor, client-side scoring, no AI key). Deployment status (`getLatestDeploymentStatus` off GitHub Deployments/commit-status → `GET .../deployment` + `DeploymentStatus` sidebar widget that polls while building). PR creation re-added (`.../pull-request` route + `PullRequestButton`, staging→default, activity-logged). Full-page `PreviewPanel` in the workspace. `next build` + type-check pass. 5.1/5.2/5.3/5.4 building next this session. |
 
 > **Append a row here every time this file is edited** (see `AGENTS.md`).
