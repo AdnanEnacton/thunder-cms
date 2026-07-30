@@ -176,7 +176,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 |---|---|---|---|
 | 5.1 | i18n (12 locales) | `[ ]` | In progress — `next-intl` plumbing + English messages + `LocaleSwitcher`; other 11 locales stubbed for translators. |
 | 5.2 | GitLab provider | `[ ]` | In progress — abstracting Git behind a `GitProvider` interface + GitLab client. |
-| 5.3 | Collaborative cursors (WebSocket presence) | `[ ]` | In progress — `apps/ws-server` (socket.io) + client hook + editor cursors. |
+| 5.3 | Collaborative cursors (WebSocket presence) | `[x]` | New `apps/ws-server` (standalone socket.io, one room per `projectId::filePath`, in-memory roster, color assignment, optional `WS_AUTH_SECRET`, `/health`). Web: `GET /api/realtime` (URL+secret to authed users only), `usePresence` hook (`socket.io-client`), `PresenceBar` live avatars in the editor header, save broadcasts `entry:saved` to peers. Degrades to a no-op when `NEXT_PUBLIC_WS_URL` is unset. **Cursor transport is fully implemented in the protocol/hook (`peer:cursor`/`sendCursor`); pixel-accurate remote-caret rendering inside the custom contenteditable is the one deferred polish item (P5-C2).** |
 | 5.4 | Shortcode / block editor (MDX components) | `[ ]` | In progress — shortcode insertion (Callout/YouTube/etc.) in the notion-editor body. |
 | 5.5 | Deployment status (Vercel/Netlify webhook) | `[x]` | `getLatestDeploymentStatus` reads GitHub Deployments / commit-status that Vercel/Netlify publish (no webhook receiver needed); `GET /api/projects/[id]/deployment` + `DeploymentStatus` in `project-sidebar.tsx` (polls while a build is `pending`, links to the live/log URL). |
 | 5.6 | SEO suggestions | `[x]` | `lib/seo/analyze.ts` — client-side 0–100 score + actionable checks (title/description/length/headings/alt/slug); `SeoPanel` modal wired into `entry-editor.tsx`. No AI key required. |
@@ -184,7 +184,8 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 ### Phase 5 pending
 - [ ] **P5-A** i18n setup (`next-intl`) + locale files.
 - [ ] **P5-B** Abstract Git provider behind `GitProvider` interface; add GitLab client (`@gitbeaker/rest`).
-- [ ] **P5-C** WebSocket presence + cursors.
+- [x] **P5-C** WebSocket presence + cursors. — **Done.** `apps/ws-server` + `usePresence` + `PresenceBar`.
+- [ ] **P5-C2** Render remote carets (pixel-accurate) inside the custom markdown/visual editor — transport already ships them, only the overlay renderer remains.
 - [ ] **P5-D** MDX shortcode/component block editor.
 - [x] **P5-E** Deploy-status webhooks (Vercel/Netlify). — **Done** (via GitHub Deployments/commit-status, no receiver needed).
 - [x] **P5-F** SEO suggestions on save. — **Done** (`SeoPanel`, live client-side analysis).

@@ -26,6 +26,8 @@ import { ConflictDialog } from "@/components/content/conflict-dialog";
 import { VersionHistory } from "@/components/content/version-history";
 import { AiAssistant } from "@/components/content/ai-assistant";
 import { SeoPanel } from "@/components/content/seo-panel";
+import { PresenceBar } from "@/components/content/presence-bar";
+import { usePresence } from "@/hooks/use-presence";
 
 interface EntryEditorProps {
   projectId: string;
@@ -65,6 +67,8 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
   // Remembers the commit message of the last save attempt so an overwrite
   // (after a conflict) reuses it instead of the default.
   const lastMessageRef = useRef<string | null>(null);
+  // Live collaboration presence (no-op unless a WS server is configured).
+  const { members, selfColor, sendSaved } = usePresence(projectId, filePath);
 
   useEffect(() => {
     async function load() {
@@ -161,6 +165,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
     setSuccess("Saved successfully");
     setPendingMessage(null);
     refreshLastUpdated();
+    sendSaved();
     router.refresh();
     return true;
   }
@@ -290,6 +295,7 @@ export function EntryEditor({ projectId, filePath, onBack }: EntryEditorProps) {
           </div>
         </div>
         <div className="flex items-center gap-1.5">
+          <PresenceBar members={members} selfColor={selfColor} />
           <Button
             variant="ghost"
             size="sm"
