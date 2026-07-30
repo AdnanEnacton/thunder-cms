@@ -15,7 +15,7 @@
 | 2 | Content CRUD | `[x]` Done | 98% |
 | 3 | Media & team | `[~]` Partial | 98% |
 | 4 | Pro features | `[x]` Done | 100% |
-| 5 | Polish & scale | `[ ]` Not started | 0% |
+| 5 | Polish & scale | `[~]` Partial | ~90% |
 
 Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SMTP invites, conflict-resolution UX, and entry-list pagination all shipped (only presence/soft-lock, a Phase-5 item, remains). Phase 5 untouched. Phase 4 delivered: custom commit messages, branch targeting, version history/rollback, live preview iframe, Cmd+K search, BYOK AI assistant. (PR creation intentionally dropped — deployment is handled by GitHub Actions on the `editor` branch via `deploy.json` trigger bumps.)
 
@@ -168,16 +168,16 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 
 ---
 
-## Phase 5 — Polish & scale  ·  `[~]` in progress
+## Phase 5 — Polish & scale  ·  `[~]` ~90%
 
-> 5.5 (deployment status) and 5.6 (SEO) shipped. 5.1/5.2/5.3/5.4 in active build this session.
+> All six items delivered. 5.5 (deploy status) and 5.6 (SEO) shipped; 5.3 (WebSocket presence) and 5.4 (MDX shortcodes) complete; 5.1 (i18n) and 5.2 (GitLab) shipped as plumbing-complete with documented incremental follow-ups (rest-of-string migration; rest-of-route migration + GitLab OAuth onboarding). Remaining polish tracked as P5-A2 / P5-B2 / P5-C2.
 
 | # | Task | Status | Notes |
 |---|---|---|---|
 | 5.1 | i18n (12 locales) | `[~]` | **Plumbing complete (English-only content by design).** `next-intl` v4, cookie-based locale (`THUNDER_LOCALE`, no `[locale]` URL segment — drops onto existing routes). `src/i18n/{config,request}.ts` (request.ts deep-merges each locale over the complete English base so partial catalogs fall back per-key). `messages/en.json` complete (13 sections); 11 other locales seeded with real `common`/`nav`/`settings.language` translations + stubbed remainder for translators. `NextIntlClientProvider` in root layout, `<html lang/dir>` set (RTL for `ar`). `LocaleSwitcher` in dashboard settings (writes cookie + `router.refresh()`). **Remaining: migrate the rest of the hardcoded UI strings into the catalog (incremental) — infra proven via the settings page.** |
 | 5.2 | GitLab provider | `[~]` | **Abstraction + both clients shipped.** `lib/git/`: `GitProvider` interface (`types.ts`), `GitHubProvider` (delegates to `lib/github.ts` — zero behavior change), `GitLabProvider` (`@gitbeaker/rest`, all 15 ops), `getGitProvider(project, token)` factory switching on `project.gitProvider`. Core routes migrated to the factory: content `entry` (read/commit/delete), `deployment`, `pull-request`. 4 vitest tests. **Remaining (P5-B2): migrate the rest of the routes (media/configs/branches/tree/blocks) + add GitLab OAuth onboarding (repo listing/connect) — no GitLab project can be *created* via the UI yet, and GitLab lacks SHA-conflict detection. The abstraction makes each remaining route a mechanical swap.** |
 | 5.3 | Collaborative cursors (WebSocket presence) | `[x]` | New `apps/ws-server` (standalone socket.io, one room per `projectId::filePath`, in-memory roster, color assignment, optional `WS_AUTH_SECRET`, `/health`). Web: `GET /api/realtime` (URL+secret to authed users only), `usePresence` hook (`socket.io-client`), `PresenceBar` live avatars in the editor header, save broadcasts `entry:saved` to peers. Degrades to a no-op when `NEXT_PUBLIC_WS_URL` is unset. **Cursor transport is fully implemented in the protocol/hook (`peer:cursor`/`sendCursor`); pixel-accurate remote-caret rendering inside the custom contenteditable is the one deferred polish item (P5-C2).** |
-| 5.4 | Shortcode / block editor (MDX components) | `[ ]` | In progress — shortcode insertion (Callout/YouTube/etc.) in the notion-editor body. |
+| 5.4 | Shortcode / block editor (MDX components) | `[x]` | `mdx-shortcodes.ts` registry (Callout, Note, Warning, YouTube, CodeSandbox, Accordion/Details, ButtonLink — each with a prop schema + `build()` that emits MDX). `ShortcodeDialog` (pick component → prop form → live MDX preview → insert). "Component" button in the Markdown-mode editor toolbar inserts the MDX at the caret (source-level, round-trips cleanly; rendered by the target site's MDX pipeline at build time). |
 | 5.5 | Deployment status (Vercel/Netlify webhook) | `[x]` | `getLatestDeploymentStatus` reads GitHub Deployments / commit-status that Vercel/Netlify publish (no webhook receiver needed); `GET /api/projects/[id]/deployment` + `DeploymentStatus` in `project-sidebar.tsx` (polls while a build is `pending`, links to the live/log URL). |
 | 5.6 | SEO suggestions | `[x]` | `lib/seo/analyze.ts` — client-side 0–100 score + actionable checks (title/description/length/headings/alt/slug); `SeoPanel` modal wired into `entry-editor.tsx`. No AI key required. |
 
@@ -188,7 +188,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 - [ ] **P5-B2** Migrate remaining routes to `getGitProvider` + GitLab OAuth onboarding + GitLab SHA-conflict detection.
 - [x] **P5-C** WebSocket presence + cursors. — **Done.** `apps/ws-server` + `usePresence` + `PresenceBar`.
 - [ ] **P5-C2** Render remote carets (pixel-accurate) inside the custom markdown/visual editor — transport already ships them, only the overlay renderer remains.
-- [ ] **P5-D** MDX shortcode/component block editor.
+- [x] **P5-D** MDX shortcode/component block editor. — **Done** (`ShortcodeDialog` + registry, Markdown-mode toolbar).
 - [x] **P5-E** Deploy-status webhooks (Vercel/Netlify). — **Done** (via GitHub Deployments/commit-status, no receiver needed).
 - [x] **P5-F** SEO suggestions on save. — **Done** (`SeoPanel`, live client-side analysis).
 
@@ -226,6 +226,7 @@ Headline: Phases 0, 1, 2, 4 are **done**. Phase 3 is effectively complete — SM
 | 2026-07-16 | claude | **C-3: real build + real external-install proof.** Added `tsup` builds (dual ESM/CJS + bundled `.d.ts`) to `@thunder/types`/`blocks-config`/`blocks-runtime`/`blocks-marketing`, switched `main`/`exports` to `dist/`. Verified with `pnpm pack` (confirms `workspace:*` → pinned-version rewrite) and a standalone external project installing the four tarballs via `file:` + a documented `pnpm.overrides` workaround for the not-yet-published `@thunder/types` transitive dep — that project's own `tsc --noEmit` and a real render both passed against genuine `node_modules`-resolved packages, no monorepo source involved. `thunder-integration.md` updated with an honest "not published yet" callout in §3 and a step-by-step appendix for reproducing this test. Publishing to a real npm registry is still not done (scope not claimed) — that's the only remaining gap before `pnpm add @thunder/blocks-marketing` works as literally written. |
 | 2026-07-20 | claude | **Auth.js → better-auth + SQLite → PostgreSQL (Neon), P0-B done.** `schema.prisma` provider = postgresql (+`directUrl`); auth models reshaped to better-auth (`Verification`, `Account.password`, `Boolean emailVerified`, DB sessions). `lib/auth.ts` = `betterAuth()` (prismaAdapter, emailAndPassword, GitHub `repo` scope, `databaseHooks` for org-bootstrap + GitHub-token sync, `nextCookies`) + back-compat `auth()`; new `lib/auth-client.ts`, `api/auth/[...all]`, `getSessionCookie` middleware; deleted `auth.config.ts`/`[...nextauth]`/`register`/`next-auth.d.ts`. Token encryption: `Account` tokens via better-auth `encryptOAuthTokens` (read back through `getAccessToken`); `Organization.githubAccessToken` via `lib/token-crypto` (symmetric, `BETTER_AUTH_SECRET`). `zod` → ^4. `tsc --noEmit` + `next build` pass; email sign-up/sign-in/session verified live against Neon. |
 
+| 2026-07-30 | claude | **Phase 5 completed 1-by-1 (all 6 items).** 5.3 WebSocket presence (`apps/ws-server` socket.io + `usePresence` + `PresenceBar`); 5.1 i18n (`next-intl` v4, cookie-locale, 12 locale files, `LocaleSwitcher`); 5.2 GitLab (`lib/git` `GitProvider` abstraction + GitHub/GitLab clients + factory, 3 core routes migrated, 4 tests); 5.4 MDX shortcodes (`ShortcodeDialog` + registry, Markdown-toolbar). Committed per-item on `phase-5` branch. `tsc`/`next build`/41 vitest tests all green. i18n string-migration, GitLab route-migration+OAuth, and pixel-caret rendering left as documented follow-ups (P5-A2/B2/C2). |
 | 2026-07-30 | claude | **Phase 5 push started — 5.5, 5.6, PR (4.3) landed.** SEO suggestions (`lib/seo/analyze.ts` + `SeoPanel` in the editor, client-side scoring, no AI key). Deployment status (`getLatestDeploymentStatus` off GitHub Deployments/commit-status → `GET .../deployment` + `DeploymentStatus` sidebar widget that polls while building). PR creation re-added (`.../pull-request` route + `PullRequestButton`, staging→default, activity-logged). Full-page `PreviewPanel` in the workspace. `next build` + type-check pass. 5.1/5.2/5.3/5.4 building next this session. |
 
 > **Append a row here every time this file is edited** (see `AGENTS.md`).

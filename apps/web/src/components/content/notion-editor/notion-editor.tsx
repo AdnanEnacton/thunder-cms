@@ -12,6 +12,7 @@ import { htmlToMarkdown, markdownToHtml } from "@/lib/markdown/convert";
 import { BlockMenu, BLOCK_MENU_ITEMS, type BlockMenuItem } from "./block-menu";
 import { EditorToolbar } from "./editor-toolbar";
 import { ImageInsertDialog, type ImageInsertResult } from "./image-insert-dialog";
+import { ShortcodeDialog } from "./shortcode-dialog";
 import { SlashHint } from "./slash-hint";
 import { TableInsertDialog } from "./table-insert-dialog";
 import { TableToolbar } from "./table-toolbar";
@@ -214,6 +215,7 @@ function MarkdownSurface({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [imageOpen, setImageOpen] = useState(false);
   const [tableInsertOpen, setTableInsertOpen] = useState(false);
+  const [shortcodeOpen, setShortcodeOpen] = useState(false);
   const [slash, setSlash] = useState<SlashState | null>(null);
 
   function insertAtCursor(snippet: string, replaceSlash = false) {
@@ -373,6 +375,7 @@ function MarkdownSurface({
         onQuote={() => insertAtCursor("\n\n> ")}
         onImage={() => setImageOpen(true)}
         onOpenBlocks={() => openSlashMenu(true)}
+        onComponent={() => setShortcodeOpen(true)}
       />
       <textarea
         ref={textareaRef}
@@ -414,6 +417,11 @@ function MarkdownSurface({
         open={tableInsertOpen}
         onClose={() => setTableInsertOpen(false)}
         onInsert={handleTableInsert}
+      />
+      <ShortcodeDialog
+        open={shortcodeOpen}
+        onClose={() => setShortcodeOpen(false)}
+        onInsert={(mdx) => insertAtCursor(mdx, false)}
       />
     </div>
   );

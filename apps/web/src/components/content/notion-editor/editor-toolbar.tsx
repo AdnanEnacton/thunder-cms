@@ -12,6 +12,7 @@ import {
   List,
   ListOrdered,
   Plus,
+  Puzzle,
   Quote,
   Strikethrough,
 } from "lucide-react";
@@ -29,6 +30,8 @@ interface EditorToolbarProps {
   onQuote: () => void;
   onImage: () => void;
   onOpenBlocks: () => void;
+  /** Optional — when provided, shows an "Insert MDX component" button. */
+  onComponent?: () => void;
   className?: string;
 }
 
@@ -44,6 +47,7 @@ export function EditorToolbar({
   onQuote,
   onImage,
   onOpenBlocks,
+  onComponent,
   className,
 }: EditorToolbarProps) {
   return (
@@ -103,6 +107,18 @@ export function EditorToolbar({
         <Plus className="h-4 w-4" />
         <span>Blocks</span>
       </button>
+
+      {onComponent && (
+        <button
+          type="button"
+          onClick={onComponent}
+          className="notion-editor-blocks-btn"
+          title="Insert MDX component"
+        >
+          <Puzzle className="h-4 w-4" />
+          <span>Component</span>
+        </button>
+      )}
     </div>
   );
 }
