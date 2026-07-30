@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLatestDeploymentStatus } from "@/lib/github";
+import { getGitProvider } from "@/lib/git";
 import { getProjectForUser, getProjectBranch } from "@/lib/project-auth";
 
 /**
@@ -23,12 +23,7 @@ export async function GET(
   const branch = getProjectBranch(project);
 
   try {
-    const deployment = await getLatestDeploymentStatus(
-      token,
-      project.gitRepoOwner!,
-      project.gitRepoName!,
-      branch,
-    );
+    const deployment = await getGitProvider(project, token).getLatestDeploymentStatus(branch);
     return NextResponse.json({ branch, deployment });
   } catch {
     return NextResponse.json({ error: "Failed to load deployment status" }, { status: 500 });

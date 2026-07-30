@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  compareBranches,
-  createPullRequest,
-  getOpenPullRequest,
-} from "@/lib/github";
+import { getGitProvider } from "@/lib/git";
 import { getProjectForUser } from "@/lib/project-auth";
 import { prisma } from "@thunder/database";
 
@@ -40,13 +36,12 @@ export async function GET(
     return NextResponse.json({ needsPr: false, base, head, existing: null, aheadBy: 0 });
   }
 
+  const git = getGitProvider(project, token);
+
   try {
     const [existing, comparison] = await Promise.all([
-      getOpenPullRequest(token, project.gitRepoOwner!, project.gitRepoName!, head, base),
-      compareBranches(token, project.gitRepoOwner!, project.gitRepoName!, base, head).catch(() => ({
-        aheadBy: 0,
-        behindBy: 0,
-      })),
+      git.getOpenPullRequest(head, base),
+      git.compareBranches(base, head).catch(() => ({ aheadBy: 0, behindBy: 0 })),
     ]);
 
     return NextResponse.json({
@@ -93,12 +88,11 @@ export async function POST(
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }
 
-  const owner = project.gitRepoOwner!;
-  const repo = project.gitRepoName!;
+  const git = getGitProvider(project, token);
 
   try {
     // If a PR already exists for head→base, return it instead of erroring.
-    const existing = await getOpenPullRequest(token, owner, repo, head, base);
+    const existing = await git.getOpenPullRequest(head, base);
     if (existing) {
       return NextResponse.json({ pullRequest: existing, alreadyOpen: true });
     }
@@ -108,7 +102,7 @@ export async function POST(
       parsed.data.body?.trim() ||
       `Merges content changes from \`${head}\` into \`${base}\`.\n\nOpened from THUNDER-CMS.`;
 
-    const pullRequest = await createPullRequest(token, owner, repo, head, base, title, body);
+    const pullRequest = await git.createPullRequest(head, base, title, body);
 
     await prisma.activityLog.create({
       data: {
